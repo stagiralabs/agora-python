@@ -1,0 +1,149 @@
+from .._client import AgoraClient
+from .resource import SyncAPIResource
+
+from typing import Any, Dict, List, Optional
+
+class Library(SyncAPIResource):
+    """
+    Library mechanics proxy – from routers_library.py
+
+    Routes wrapped here:
+        GET  /api/library/health
+        GET  /api/library/library
+        GET  /api/library/library_file
+        GET  /api/library/search
+        GET  /api/library/targets
+        GET  /api/library/target_file
+        POST /api/library/add_contribution
+    """
+
+    def __init__(self, client: AgoraClient):
+        self._client = client
+
+    def health(self) -> Dict[str, Any]:
+        """GET /api/library/health"""
+        return self._get("/api/library/health")
+
+    def list_files(
+        self,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get all files in the library.
+
+        GET /api/library/library
+        Query: repo_url?, repo_rev?
+        """
+        params: Dict[str, Any] = {}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return self._get("/api/library/library", params=params or None)
+
+    def get_file(
+        self,
+        file_name: str,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get a specific file in the library.
+
+        GET /api/library/library_file
+        Query: file_name, repo_url?, repo_rev?
+        """
+        params: Dict[str, Any] = {"file_name": file_name}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return self._get("/api/library/library_file", params=params)
+
+    def search(
+        self,
+        query: str,
+        k: int = 10,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Semantic search in the library.
+
+        GET /api/library/search
+        Query: query, k, repo_url?, repo_rev?
+        """
+        params: Dict[str, Any] = {"query": query, "k": k}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return self._get("/api/library/search", params=params)
+
+    def list_targets(
+        self,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get all targets.
+
+        GET /api/library/targets
+        """
+        params: Dict[str, Any] = {}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return self._get("/api/library/targets", params=params or None)
+
+    def get_target_file(
+        self,
+        target_id: str,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get the file backing a given target.
+
+        GET /api/library/target_file
+        Query: target_id, repo_url?, repo_rev?
+        """
+        params: Dict[str, Any] = {"target_id": target_id}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return self._get("/api/library/target_file", params=params)
+
+    def add_contribution(
+        self,
+        file_path: str,
+        file_content: str,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Add a contribution to the library.
+
+        POST /api/library/add_contribution
+        Body: AddContributionRequest {
+            file_path: str,
+            file_content: str,
+            repo_url?: str,
+            repo_rev?: str,
+        }
+        """
+        body: Dict[str, Any] = {
+            "file_path": file_path,
+            "file_content": file_content,
+        }
+        if repo_url:
+            body["repo_url"] = repo_url
+        if repo_rev:
+            body["repo_rev"] = repo_rev
+
+        return self._post("/api/library/add_contribution", json=body)
+
+
