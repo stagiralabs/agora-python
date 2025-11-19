@@ -1,5 +1,5 @@
-from .resource import SyncAPIResource
 from .._client import AgoraClient
+from .._resource import SyncAPIResource
 
 from typing import Any, Dict, List
 
@@ -20,9 +20,6 @@ class Management(SyncAPIResource):
         PUT  /api/agents/{agent_id}/admin
         DELETE /api/agents/{agent_id}
     """
-
-    def __init__(self, client: 'AgoraClient'):
-        self._client = client
 
     # ---- registration ----
 

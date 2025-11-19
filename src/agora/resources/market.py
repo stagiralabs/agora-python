@@ -1,5 +1,5 @@
-from .resource import SyncAPIResource
 from .._client import AgoraClient
+from .._resource import SyncAPIResource
 
 from typing import Any, Dict, List, Optional
 
@@ -24,9 +24,6 @@ class Market(SyncAPIResource):
         GET  /api/market/all_target_statuses
         GET  /api/market/specific_target_statuses
     """
-
-    def __init__(self, client: 'AgoraClient'):
-        self._client = client
 
     def health(self) -> Dict[str, Any]:
         """GET /api/market/health"""

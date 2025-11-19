@@ -1,4 +1,5 @@
 import dataclasses
+import os
 import requests
 from typing import Any, Dict, List, Optional
 
@@ -29,7 +30,7 @@ class AuthAPI:
 
         GET /api/auth/me
         """
-        return self._client.get("/api/auth/me")
+        return self._client._get("/api/auth/me")
 
     # ---- API keys ----
 
@@ -51,7 +52,7 @@ class AuthAPI:
         if expires_in_days is not None:
             body["expires_in_days"] = expires_in_days
 
-        return self._client.post("/api/auth/api-keys", json=body)
+        return self._client._post("/api/auth/api-keys", json=body)
 
     def list_api_keys(self) -> List[Dict[str, Any]]:
         """
@@ -60,7 +61,7 @@ class AuthAPI:
         GET /api/auth/api-keys
         Returns: List[APIKeyResponse]
         """
-        return self._client.get("/api/auth/api-keys")
+        return self._client._get("/api/auth/api-keys")
 
     def delete_api_key(self, api_key_id: str) -> None:
         """
@@ -68,7 +69,7 @@ class AuthAPI:
 
         DELETE /api/auth/api-keys/{api_key_id}
         """
-        self._client.delete(f"/api/auth/api-keys/{api_key_id}")
+        self._client._delete(f"/api/auth/api-keys/{api_key_id}")
 
 
 @dataclasses.dataclass
@@ -82,11 +83,6 @@ class AgoraClient(SyncClient):
     """
     Main entry point for talking to the Agora backend.
 
-    base_url should be the root of the FastAPI app, e.g.:
-
-        http://localhost:8000
-        https://agora.example.com
-
     This client assumes the routers use the following prefixes:
         /api/auth
         /api
@@ -94,7 +90,12 @@ class AgoraClient(SyncClient):
         /api/market
     """
 
-    def __init__(self, base_url: str, token: Optional[str] = None, timeout: float = 10.0):
+    def __init__(
+        self, 
+        base_url: str, 
+        token: Optional[str] = None, 
+        timeout: float = 10.0
+    ) -> None:
         if not base_url:
             raise ValueError("base_url must be non-empty")
 
@@ -106,10 +107,14 @@ class AgoraClient(SyncClient):
 
         self._session = requests.Session()
         self._session.headers.update({"Accept": "application/json"})
-        if token:
+
+        if token is None:
+            token = os.environ.get("AGORA_API_KEY")
             self.set_token(token)
 
-        # Resource namespaces
+        if token is None:
+            raise AgoraError("Please provide an api_key to the client by passing it as an argument or setting the AGORA_API_KEY environment variable")
+
         self.auth = AuthAPI(self)
 
     # ------------- core HTTP helpers -------------
@@ -181,16 +186,16 @@ class AgoraClient(SyncClient):
         return payload
 
     # Convenience wrappers
-    def get(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _get(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
         return self._request("GET", path, params=params)
 
-    def post(self, path: str, *, json: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _post(self, path: str, *, json: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None) -> Any:
         return self._request("POST", path, params=params, json=json)
 
-    def delete(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _delete(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
         return self._request("DELETE", path, params=params)
 
-    def put(self, path: str, *, json: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _put(self, path: str, *, json: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None) -> Any:
         return self._request("PUT", path, params=params, json=json)
     
     # ------------- resource endpoints -------------

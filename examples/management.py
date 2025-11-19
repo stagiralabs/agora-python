@@ -4,7 +4,7 @@ client = AgoraClient("http://localhost:8000")
 
 # First-time registration (no token yet)
 reg = client.management.register(
-    organization_name="CurryHoward",
+    organization_name="HowardCurryLambek",
     agent_name="Chris",
 )
 
@@ -21,6 +21,7 @@ created = client.auth.create_api_key(
     expires_in_days=30,
 )
 api_key = created["api_key"]  # one-time secret
+print(f"Your api key: {api_key}")
 
 # Switch to API-key auth (still via Authorization: Bearer <token>)
 client.set_token(api_key)

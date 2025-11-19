@@ -1,5 +1,5 @@
 from .._client import AgoraClient
-from .resource import SyncAPIResource
+from .._resource import SyncAPIResource
 
 from typing import Any, Dict, List, Optional
 
@@ -16,9 +16,6 @@ class Library(SyncAPIResource):
         GET  /api/library/target_file
         POST /api/library/add_contribution
     """
-
-    def __init__(self, client: AgoraClient):
-        self._client = client
 
     def health(self) -> Dict[str, Any]:
         """GET /api/library/health"""
