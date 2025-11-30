@@ -1,5 +1,5 @@
 from .._client import AgoraClient
-from .._resource import SyncAPIResource
+from .._resource import SyncAPIResource, AsyncAPIResource
 
 from typing import Any, Dict, List, Optional
 
@@ -143,3 +143,76 @@ class Market(SyncAPIResource):
         return self._post("/api/market" + path, json=json, params=params)
     
 
+class AsyncMarket(AsyncAPIResource):
+    """
+    Async market mechanics proxy – from routers_market.py.
+    """
+
+    async def health(self) -> Dict[str, Any]:
+        return await self._get("/api/market/health")
+
+    async def list_organization_ids(self) -> List[str]:
+        return await self._get("/api/market/organization_ids")
+
+    async def list_all_agents(self) -> List[Dict[str, Any]]:
+        return await self._get("/api/market/all_agents")
+
+    async def list_organization_agents(self, organization_id: str) -> List[Dict[str, Any]]:
+        return await self._get(f"/api/market/organizations/{organization_id}/agents")
+
+    async def list_all_wallets(self) -> List[Dict[str, Any]]:
+        return await self._get("/api/market/all_wallets")
+
+    async def get_wallets_by_id(self, wallet_ids: List[str]) -> List[Dict[str, Any]]:
+        params = [("wallet_ids", wid) for wid in wallet_ids]
+        return await self._request("GET", "/api/market/wallets_by_id", params=params)
+
+    async def list_organization_wallets(self, organization_id: str) -> List[Dict[str, Any]]:
+        return await self._get(f"/api/market/organizations/{organization_id}/wallets")
+
+    async def get_wallet_contents(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        path = f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/wallet_contents"
+        return await self._get(path, params=params)
+
+    async def list_offers(self) -> List[Dict[str, Any]]:
+        return await self._get("/api/market/offers")
+
+    async def get_offers_given_targets(self, target_ids: List[str]) -> Dict[str, Any]:
+        params = [("target_ids", tid) for tid in target_ids]
+        return await self._request("GET", "/api/market/offers_given_targets", params=params)
+
+    async def get_assets_given_targets(self, target_ids: List[str]) -> Dict[str, Any]:
+        params = [("target_ids", tid) for tid in target_ids]
+        return await self._request("GET", "/api/market/assets_given_targets", params=params)
+
+    async def get_targets_given_offers(self, offer_ids: List[str]) -> Dict[str, Any]:
+        params = [("offer_ids", oid) for oid in offer_ids]
+        return await self._request("GET", "/api/market/targets_given_offers", params=params)
+
+    async def get_targets_given_assets(self, asset_ids: List[str]) -> Dict[str, Any]:
+        params = [("asset_ids", aid) for aid in asset_ids]
+        return await self._request("GET", "/api/market/targets_given_assets", params=params)
+
+    async def get_all_target_statuses(self) -> Dict[str, Any]:
+        return await self._get("/api/market/all_target_statuses")
+
+    async def get_specific_target_statuses(self, target_ids: List[str]) -> Dict[str, Any]:
+        params = [("target_ids", tid) for tid in target_ids]
+        return await self._request("GET", "/api/market/specific_target_statuses", params=params)
+
+    async def raw__get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Any:
+        if not path.startswith("/"):
+            path = "/" + path
+        return await self._get("/api/market" + path, params=params)
+
+    async def raw__post(self, path: str, json: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None) -> Any:
+        if not path.startswith("/"):
+            path = "/" + path
+        return await self._post("/api/market" + path, json=json, params=params)
+    

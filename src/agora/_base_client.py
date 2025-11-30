@@ -1,8 +1,88 @@
-class SyncClient:
-    #TODO
-    pass
+import abc
+from typing import Any, Dict, Optional
 
 
-class AsyncClient:
-    #TODO
-    pass
+class SyncClient(abc.ABC):
+    """
+    Minimal interface for synchronous clients.
+
+    Subclasses implement `_request`, these helpers wrap common HTTP verbs.
+    """
+
+    @abc.abstractmethod
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        raise NotImplementedError
+
+    def _get(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+        return self._request("GET", path, params=params)
+
+    def _post(
+        self,
+        path: str,
+        *,
+        json: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        return self._request("POST", path, params=params, json=json)
+
+    def _delete(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+        return self._request("DELETE", path, params=params)
+
+    def _put(
+        self,
+        path: str,
+        *,
+        json: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        return self._request("PUT", path, params=params, json=json)
+
+
+class AsyncClient(abc.ABC):
+    """
+    Minimal interface for async clients.
+
+    Subclasses implement `_request`, helpers wrap common HTTP verbs.
+    """
+
+    @abc.abstractmethod
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        raise NotImplementedError
+
+    async def _get(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+        return await self._request("GET", path, params=params)
+
+    async def _post(
+        self,
+        path: str,
+        *,
+        json: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        return await self._request("POST", path, params=params, json=json)
+
+    async def _delete(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+        return await self._request("DELETE", path, params=params)
+
+    async def _put(
+        self,
+        path: str,
+        *,
+        json: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        return await self._request("PUT", path, params=params, json=json)

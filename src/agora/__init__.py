@@ -3,5 +3,6 @@ from ._exceptions import (
 )
 
 from ._client import (
-    AgoraClient
+    AgoraClient,
+    AsyncAgoraClient,
 )

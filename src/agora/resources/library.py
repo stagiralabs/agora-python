@@ -1,5 +1,5 @@
 from .._client import AgoraClient
-from .._resource import SyncAPIResource
+from .._resource import SyncAPIResource, AsyncAPIResource
 
 from typing import Any, Dict, List, Optional
 
@@ -143,4 +143,94 @@ class Library(SyncAPIResource):
 
         return self._post("/api/library/add_contribution", json=body)
 
+
+class AsyncLibrary(AsyncAPIResource):
+    """
+    Async library mechanics proxy – from routers_library.py.
+    """
+
+    async def health(self) -> Dict[str, Any]:
+        return await self._get("/api/library/health")
+
+    async def list_files(
+        self,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        params: Dict[str, Any] = {}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return await self._get("/api/library/library", params=params or None)
+
+    async def get_file(
+        self,
+        file_name: str,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        params: Dict[str, Any] = {"file_name": file_name}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return await self._get("/api/library/library_file", params=params)
+
+    async def search(
+        self,
+        query: str,
+        k: int = 10,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        params: Dict[str, Any] = {"query": query, "k": k}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return await self._get("/api/library/search", params=params)
+
+    async def list_targets(
+        self,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        params: Dict[str, Any] = {}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return await self._get("/api/library/targets", params=params or None)
+
+    async def get_target_file(
+        self,
+        target_id: str,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        params: Dict[str, Any] = {"target_id": target_id}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return await self._get("/api/library/target_file", params=params)
+
+    async def add_contribution(
+        self,
+        file_path: str,
+        file_content: str,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        body: Dict[str, Any] = {
+            "file_path": file_path,
+            "file_content": file_content,
+        }
+        if repo_url:
+            body["repo_url"] = repo_url
+        if repo_rev:
+            body["repo_rev"] = repo_rev
+
+        return await self._post("/api/library/add_contribution", json=body)
 

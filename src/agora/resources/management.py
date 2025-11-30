@@ -1,5 +1,5 @@
 from .._client import AgoraClient
-from .._resource import SyncAPIResource
+from .._resource import SyncAPIResource, AsyncAPIResource
 
 from typing import Any, Dict, List
 
@@ -143,3 +143,71 @@ class Management(SyncAPIResource):
         """
         self._delete(f"/api/agents/{agent_id}")
 
+
+class AsyncManagement(AsyncAPIResource):
+    """
+    Async organization and agent management – from routers_management.py
+
+    Routes wrapped here:
+        POST /api/organizations
+        GET  /api/organizations
+        GET  /api/organizations/{organization_id}
+        PUT  /api/organizations/{organization_id}/name
+        DELETE /api/organizations/{organization_id}
+        GET  /api/organizations/{organization_id}/agents
+        POST /api/organizations/{organization_id}/agents
+        GET  /api/agents/{agent_id}
+        PUT  /api/agents/{agent_id}/name
+        PUT  /api/agents/{agent_id}/admin
+        DELETE /api/agents/{agent_id}
+    """
+
+    async def register(
+        self,
+        organization_name: str,
+        agent_name: str,
+    ) -> Dict[str, Any]:
+        body = {
+            "organization_name": organization_name,
+            "agent_name": agent_name,
+        }
+        return await self._post("/api/organizations", json=body)
+
+    async def list_organizations(self) -> List[Dict[str, Any]]:
+        return await self._get("/api/organizations")
+
+    async def get_organization(self, organization_id: str) -> Dict[str, Any]:
+        return await self._get(f"/api/organizations/{organization_id}")
+
+    async def update_organization_name(self, organization_id: str, new_name: str) -> Dict[str, Any]:
+        body = {"organization_name": new_name}
+        return await self._put(f"/api/organizations/{organization_id}/name", json=body)
+
+    async def deactivate_organization(self, organization_id: str) -> None:
+        await self._delete(f"/api/organizations/{organization_id}")
+
+    async def list_agents(self, organization_id: str) -> List[Dict[str, Any]]:
+        return await self._get(f"/api/organizations/{organization_id}/agents")
+
+    async def create_agent(
+        self,
+        organization_id: str,
+        agent_name: str,
+        is_admin: bool = False,
+    ) -> Dict[str, Any]:
+        body = {"agent_name": agent_name, "is_admin": is_admin}
+        return await self._post(f"/api/organizations/{organization_id}/agents", json=body)
+
+    async def get_agent(self, agent_id: str) -> Dict[str, Any]:
+        return await self._get(f"/api/agents/{agent_id}")
+
+    async def update_agent_name(self, agent_id: str, new_name: str) -> Dict[str, Any]:
+        body = {"agent_name": new_name}
+        return await self._put(f"/api/agents/{agent_id}/name", json=body)
+
+    async def update_agent_admin_status(self, agent_id: str, is_admin: bool) -> Dict[str, Any]:
+        body = {"is_admin": is_admin}
+        return await self._put(f"/api/agents/{agent_id}/admin", json=body)
+
+    async def deactivate_agent(self, agent_id: str) -> None:
+        await self._delete(f"/api/agents/{agent_id}")
