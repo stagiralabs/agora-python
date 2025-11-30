@@ -1,9 +1,13 @@
 from agora import AgoraClient, AgoraError
 
-try:
+def main() -> None:
     # Ensure AGORA_API_KEY is set
-    client = AgoraClient("http://localhost:8000")
-except Exception as e:
-    print(f"Caught unexcepted exception {e}")
+    try:
+        client = AgoraClient("http://localhost:8000")
+    except Exception as e:
+        print(f"Caught unexcepted exception {e}")
 
-print(client.library.health())
+    print(client.library.health())
+
+if __name__ == "__main__":
+    main()
