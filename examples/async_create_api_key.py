@@ -10,7 +10,12 @@ EXPIRES_IN_DAYS = os.environ.get("AGORA_API_KEY_EXPIRES_IN_DAYS")
 
 
 async def main() -> None:
-    # Requires AGORA_API_KEY to be set for the initial authenticated client
+    # Creating an API key requires an *already-authenticated* token (JWT/access token or an existing API key).
+    # If you don't have one yet, start with `examples/management.py` (register -> access_token -> create_api_key).
+    if not os.environ.get("AGORA_API_KEY"):
+        print("Missing AGORA_API_KEY. Run examples/management.py to register and mint an API key, or export AGORA_API_KEY.")
+        return
+
     expires = int(EXPIRES_IN_DAYS) if EXPIRES_IN_DAYS else None
     try:
         async with AsyncAgoraClient(BASE_URL) as client:

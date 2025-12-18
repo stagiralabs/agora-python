@@ -1,11 +1,12 @@
 from agora import AgoraClient, AgoraError
+from uuid import uuid4
 
 def main() -> None:
     client = AgoraClient("http://localhost:8000")
 
     # First-time registration (no token yet)
     reg = client.management.register(
-        organization_name="CurryLambek",
+        organization_name=str(uuid4()),
         agent_name="Chris",
     )
 

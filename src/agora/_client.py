@@ -1,5 +1,6 @@
 import dataclasses
 import os
+import warnings
 import requests
 import httpx
 from typing import Any, Dict, List, Optional
@@ -8,6 +9,11 @@ from ._base_client import SyncClient, AsyncClient
 from ._exceptions import AgoraError
 
 from functools import cached_property
+
+_API_KEY_ID = 'api_key_id'
+_API_KEY_DESC = 'description'
+_API_KEY_EXPIRES_AT = 'expires_at'
+_API_KEY_ACTIVE = 'is_active'
 
 class AuthAPI:
     """
@@ -70,7 +76,120 @@ class AuthAPI:
 
         DELETE /api/auth/api-keys/{api_key_id}
         """
+        self._check_api_key_in_list_or_error(
+            api_key_id, 
+            f"API Key with ID {api_key_id} was not found. Cannot delete key."
+        )
+
         self._client._delete(f"/api/auth/api-keys/{api_key_id}")
+
+    def get_api_key_metadata(self, api_key_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Returns metadata of an API key if the key is found, None otherwise.
+        """
+        api_keys = self.list_api_keys()
+
+        for key_metadata in api_keys:
+            if key_metadata[_API_KEY_ID] == api_key_id:
+                return key_metadata
+
+        return None
+
+    def api_key_is_active(self, api_key_id: str) -> bool:
+        """
+        Returns the status of an API key.
+        """
+        api_keys = self.list_api_keys()
+        self._check_api_key_in_list_or_error(
+            api_key_id, 
+            f"API Key with ID: {api_key_id} was not found. Unable to query information about this key."
+        )
+
+        for key_metadata in api_keys:
+            if key_metadata[_API_KEY_ID] == api_key_id:
+                is_active = key_metadata[_API_KEY_ACTIVE]
+
+        return is_active
+
+    def _check_api_key_in_list_or_error(self, api_key_id: str, error_desc: Optional[str] = None) -> None:
+        api_keys = self.list_api_keys()
+
+        if not any(api_key_id == api_key_metadata[_API_KEY_ID] for api_key_metadata in api_keys):
+            if error_desc:
+                raise AgoraError(error_desc)
+            else:
+                raise AgoraError(f"API Key with ID: {api_key_id} was not found.")
+
+
+class AsyncAuthAPI:
+
+    def __init__(self, client: "AsyncAgoraClient") -> None:
+        self._client = client
+
+    async def me(self) -> Dict[str, Any]:
+        return await self._client._get("/api/auth/me")
+
+    async def create_api_key(
+        self,
+        description: Optional[str] = None,
+        expires_in_days: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        body: Dict[str, Any] = {}
+        if description is not None:
+            body["description"] = description
+        if expires_in_days is not None:
+            body["expires_in_days"] = expires_in_days
+
+        return await self._client._post("/api/auth/api-keys", json=body)
+
+    async def list_api_keys(self) -> List[Dict[str, Any]]:
+        return await self._client._get("/api/auth/api-keys")
+
+    async def delete_api_key(self, api_key_id: str) -> None:
+        await self._check_api_key_in_list_or_error(
+            api_key_id,
+            f"API Key with ID {api_key_id} was not found. Cannot delete key.",
+        )
+        await self._client._delete(f"/api/auth/api-keys/{api_key_id}")
+
+    async def get_api_key_metadata(self, api_key_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Returns metadata of an API key if the key is found, None otherwise.
+        """
+        api_keys = await self.list_api_keys()
+
+        for key_metadata in api_keys:
+            if key_metadata[_API_KEY_ID] == api_key_id:
+                return key_metadata
+
+        return None
+
+    async def api_key_is_active(self, api_key_id: str) -> bool:
+        """
+        Returns the status of an API key.
+        """
+        api_keys = await self.list_api_keys()
+        await self._check_api_key_in_list_or_error(
+            api_key_id,
+            f"API Key with ID: {api_key_id} was not found. Unable to query information about this key.",
+        )
+
+        for key_metadata in api_keys:
+            if key_metadata[_API_KEY_ID] == api_key_id:
+                return key_metadata[_API_KEY_ACTIVE]
+
+        raise AgoraError(f"API Key with ID: {api_key_id} was not found.")
+
+    async def _check_api_key_in_list_or_error(
+        self, api_key_id: str, error_desc: Optional[str] = None
+    ) -> None:
+        api_keys = await self.list_api_keys()
+
+        if not any(api_key_id == api_key_metadata[_API_KEY_ID] for api_key_metadata in api_keys):
+            if error_desc:
+                raise AgoraError(error_desc)
+            else:
+                raise AgoraError(f"API Key with ID: {api_key_id} was not found.")
 
 
 @dataclasses.dataclass
@@ -113,9 +232,13 @@ class AgoraClient(SyncClient):
             token = os.environ.get("AGORA_API_KEY")
 
         if token is None:
-            raise AgoraError("Please provide an api_key to the client by passing it as an argument or setting the AGORA_API_KEY environment variable")
-
-        self.set_token(token)
+            warnings.warn(
+                "No auth token provided. Pass `token=...` or set `AGORA_API_KEY` to call authenticated endpoints.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        else:
+            self.set_token(token)
 
         self.auth = AuthAPI(self)
 
@@ -250,9 +373,13 @@ class AsyncAgoraClient(AsyncClient):
             token = os.environ.get("AGORA_API_KEY")
 
         if token is None:
-            raise AgoraError("Please provide an api_key to the client by passing it as an argument or setting the AGORA_API_KEY environment variable")
-
-        self.set_token(token)
+            warnings.warn(
+                "No auth token provided. Pass `token=...` or set `AGORA_API_KEY` to call authenticated endpoints.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        else:
+            self.set_token(token)
 
         self.auth = AsyncAuthAPI(self)
 
@@ -332,31 +459,3 @@ class AsyncAgoraClient(AsyncClient):
 
     async def __aexit__(self, *exc_info: object) -> None:
         await self.aclose()
-
-
-class AsyncAuthAPI:
-
-    def __init__(self, client: "AsyncAgoraClient") -> None:
-        self._client = client
-
-    async def me(self) -> Dict[str, Any]:
-        return await self._client._get("/api/auth/me")
-
-    async def create_api_key(
-        self,
-        description: Optional[str] = None,
-        expires_in_days: Optional[int] = None,
-    ) -> Dict[str, Any]:
-        body: Dict[str, Any] = {}
-        if description is not None:
-            body["description"] = description
-        if expires_in_days is not None:
-            body["expires_in_days"] = expires_in_days
-
-        return await self._client._post("/api/auth/api-keys", json=body)
-
-    async def list_api_keys(self) -> List[Dict[str, Any]]:
-        return await self._client._get("/api/auth/api-keys")
-
-    async def delete_api_key(self, api_key_id: str) -> None:
-        await self._client._delete(f"/api/auth/api-keys/{api_key_id}")
