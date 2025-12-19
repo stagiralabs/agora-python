@@ -25,6 +25,25 @@ class Market(SyncAPIResource):
         GET  /api/market/specific_target_statuses
     """
 
+    def request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """
+        Escape hatch for calling market endpoints that aren't wrapped yet.
+
+        `path` is relative to `/api/market` (e.g. `"/health"` or `"health"`).
+        You can also pass a fully-qualified API path like `"/api/market/health"`.
+        """
+        if path.startswith("/api/"):
+            return self._request(method, path, params=params, json=json)
+        normalized = path if path.startswith("/") else f"/{path}"
+        return self._request(method, f"/api/market{normalized}", params=params, json=json)
+
     def health(self) -> Dict[str, Any]:
         """GET /api/market/health"""
         return self._get("/api/market/health")
@@ -121,32 +140,33 @@ class Market(SyncAPIResource):
         """GET /api/market/specific_target_statuses"""
         params = [("target_ids", tid) for tid in target_ids]
         return self._request("GET", "/api/market/specific_target_statuses", params=params)
-
-    # ---- escape hatch ----
-
-    def raw__get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Any:
-        """
-        Escape hatch for unwrapped / experimental endpoints under /api/market.
-
-        path should be relative to /api/market, e.g. "/organizations/{org_id}/wallets".
-        """
-        if not path.startswith("/"):
-            path = "/" + path
-        return self._get("/api/market" + path, params=params)
-
-    def raw__post(self, path: str, json: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None) -> Any:
-        """
-        Escape hatch POST for unwrapped /api/market endpoints.
-        """
-        if not path.startswith("/"):
-            path = "/" + path
-        return self._post("/api/market" + path, json=json, params=params)
     
 
 class AsyncMarket(AsyncAPIResource):
     """
     Async market mechanics proxy – from routers_market.py.
     """
+
+    async def request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """
+        Escape hatch for calling market endpoints that aren't wrapped yet.
+
+        `path` is relative to `/api/market` (e.g. `"/health"` or `"health"`).
+        You can also pass a fully-qualified API path like `"/api/market/health"`.
+        """
+        if path.startswith("/api/"):
+            return await self._request(method, path, params=params, json=json)
+        normalized = path if path.startswith("/") else f"/{path}"
+        return await self._request(
+            method, f"/api/market{normalized}", params=params, json=json
+        )
 
     async def health(self) -> Dict[str, Any]:
         return await self._get("/api/market/health")
@@ -205,14 +225,3 @@ class AsyncMarket(AsyncAPIResource):
     async def get_specific_target_statuses(self, target_ids: List[str]) -> Dict[str, Any]:
         params = [("target_ids", tid) for tid in target_ids]
         return await self._request("GET", "/api/market/specific_target_statuses", params=params)
-
-    async def raw__get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Any:
-        if not path.startswith("/"):
-            path = "/" + path
-        return await self._get("/api/market" + path, params=params)
-
-    async def raw__post(self, path: str, json: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None) -> Any:
-        if not path.startswith("/"):
-            path = "/" + path
-        return await self._post("/api/market" + path, json=json, params=params)
-    

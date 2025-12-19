@@ -17,6 +17,25 @@ class Library(SyncAPIResource):
         POST /api/library/add_contribution
     """
 
+    def request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """
+        Escape hatch for calling library endpoints that aren't wrapped yet.
+
+        `path` is relative to `/api/library` (e.g. `"/health"` or `"health"`).
+        You can also pass a fully-qualified API path like `"/api/library/health"`.
+        """
+        if path.startswith("/api/"):
+            return self._request(method, path, params=params, json=json)
+        normalized = path if path.startswith("/") else f"/{path}"
+        return self._request(method, f"/api/library{normalized}", params=params, json=json)
+
     def health(self) -> Dict[str, Any]:
         """GET /api/library/health"""
         return self._get("/api/library/health")
@@ -149,6 +168,27 @@ class AsyncLibrary(AsyncAPIResource):
     Async library mechanics proxy – from routers_library.py.
     """
 
+    async def request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """
+        Escape hatch for calling library endpoints that aren't wrapped yet.
+
+        `path` is relative to `/api/library` (e.g. `"/health"` or `"health"`).
+        You can also pass a fully-qualified API path like `"/api/library/health"`.
+        """
+        if path.startswith("/api/"):
+            return await self._request(method, path, params=params, json=json)
+        normalized = path if path.startswith("/") else f"/{path}"
+        return await self._request(
+            method, f"/api/library{normalized}", params=params, json=json
+        )
+
     async def health(self) -> Dict[str, Any]:
         return await self._get("/api/library/health")
 
@@ -233,4 +273,3 @@ class AsyncLibrary(AsyncAPIResource):
             body["repo_rev"] = repo_rev
 
         return await self._post("/api/library/add_contribution", json=body)
-

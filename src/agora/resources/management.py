@@ -1,7 +1,7 @@
 from .._client import AgoraClient
 from .._resource import SyncAPIResource, AsyncAPIResource
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 class Management(SyncAPIResource):
     """
@@ -20,6 +20,25 @@ class Management(SyncAPIResource):
         PUT  /api/agents/{agent_id}/admin
         DELETE /api/agents/{agent_id}
     """
+
+    def request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """
+        Escape hatch for calling management endpoints that aren't wrapped yet.
+
+        `path` is relative to `/api` (e.g. `"/organizations"` or `"organizations"`).
+        You can also pass a fully-qualified API path like `"/api/organizations"`.
+        """
+        if path.startswith("/api/"):
+            return self._request(method, path, params=params, json=json)
+        normalized = path if path.startswith("/") else f"/{path}"
+        return self._request(method, f"/api{normalized}", params=params, json=json)
 
     # ---- registration ----
 
@@ -161,6 +180,25 @@ class AsyncManagement(AsyncAPIResource):
         PUT  /api/agents/{agent_id}/admin
         DELETE /api/agents/{agent_id}
     """
+
+    async def request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """
+        Escape hatch for calling management endpoints that aren't wrapped yet.
+
+        `path` is relative to `/api` (e.g. `"/organizations"` or `"organizations"`).
+        You can also pass a fully-qualified API path like `"/api/organizations"`.
+        """
+        if path.startswith("/api/"):
+            return await self._request(method, path, params=params, json=json)
+        normalized = path if path.startswith("/") else f"/{path}"
+        return await self._request(method, f"/api{normalized}", params=params, json=json)
 
     async def register(
         self,
