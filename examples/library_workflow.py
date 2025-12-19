@@ -5,7 +5,7 @@ from agora import AgoraClient, AgoraError
 
 
 BASE_URL = os.environ.get("AGORA_BASE_URL", "http://localhost:8000")
-SEARCH_QUERY = os.environ.get("AGORA_SEARCH_QUERY", "vector database")
+SEARCH_QUERY = os.environ.get("AGORA_SEARCH_QUERY", "Pythagorean Theorem")
 REPO_URL = os.environ.get("AGORA_REPO_URL")
 REPO_REV = os.environ.get("AGORA_REPO_REV")
 TARGET_ID = os.environ.get("AGORA_TARGET_ID")
