@@ -1,4 +1,5 @@
 API_BASE = "/api"
+MANAGEMENT_BASE = API_BASE
 MARKET_BASE = f"{API_BASE}/market"
 LIBRARY_BASE = f"{API_BASE}/library"
 
@@ -18,7 +19,7 @@ def api_path(*parts: str) -> str:
 
 
 def management_path(*parts: str) -> str:
-    return api_path(*parts)
+    return _path(MANAGEMENT_BASE, *parts)
 
 
 def organizations_path(*parts: str) -> str:
