@@ -3,6 +3,7 @@ from .._resource import SyncAPIResource, AsyncAPIResource
 
 from typing import Any, Dict, List, Optional
 
+
 class Market(SyncAPIResource):
     """
     Market mechanics proxy – from routers_market.py
@@ -12,10 +13,31 @@ class Market(SyncAPIResource):
         GET  /api/market/organization_ids
         GET  /api/market/all_agents
         GET  /api/market/organizations/{organization_id}/agents
+        GET  /api/market/find_organizations
         GET  /api/market/all_wallets
         GET  /api/market/wallets_by_id
         GET  /api/market/organizations/{organization_id}/wallets
+        GET  /api/market/organizations/{organization_id}/agents/{agent_id}/trading_wallets
+        GET  /api/market/organizations/{organization_id}/wallets/{wallet_label}/trading_agents
         GET  /api/market/organizations/{organization_id}/wallets/{wallet_label}/wallet_contents
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_name}/add_wallet
+        DELETE /api/market/organizations/{organization_id}/wallets/{wallet_label}/delete_wallet
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/set_value_lower_bound
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/set_trading_agents
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/add_to_balance
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/withdraw_from_balance
+        POST /api/market/organizations/{organization_id}/merge_wallets
+        GET  /api/market/organizations/{organization_id}/wallets/{wallet_label}/evaluate_wallet_contents_minimum_value
+        POST /api/market/organizations/{organization_id}/general_wallets_update
+        POST /api/market/organizations/{organization_id}/transfer_balance_between_wallets
+        POST /api/market/organizations/{organization_id}/transfer_assets_between_wallets
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/create_offers
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/merge_assets
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/attempt_to_sell_assets
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/force_liquidate_all_assets_and_offers
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/force_liquidate_some_assets_and_offers
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/take_from_offer
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/offers/{offer_id}/new_offer_quantity
         GET  /api/market/offers
         GET  /api/market/offers_given_targets
         GET  /api/market/assets_given_targets
@@ -67,6 +89,13 @@ class Market(SyncAPIResource):
         """
         return self._get(f"/api/market/organizations/{organization_id}/agents")
 
+    def find_organizations(self, agent_ids: List[str]) -> Dict[str, Any]:
+        """
+        GET /api/market/find_organizations
+        """
+        params = [("agent_ids", aid) for aid in agent_ids]
+        return self._request("GET", "/api/market/find_organizations", params=params)
+
     # ---- wallets ----
 
     def list_all_wallets(self) -> List[Dict[str, Any]]:
@@ -90,6 +119,35 @@ class Market(SyncAPIResource):
         """
         return self._get(f"/api/market/organizations/{organization_id}/wallets")
 
+    def get_agent_trading_wallets(
+        self,
+        organization_id: str,
+        agent_id: str,
+    ) -> List[Dict[str, Any]]:
+        """
+        GET /api/market/organizations/{organization_id}/agents/{agent_id}/trading_wallets
+        """
+        path = (
+            f"/api/market/organizations/{organization_id}/agents/{agent_id}/trading_wallets"
+        )
+        return self._get(path)
+
+    def get_wallet_trading_agents(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        by: str = "name",
+    ) -> List[Dict[str, Any]]:
+        """
+        GET /api/market/organizations/{organization_id}/wallets/{wallet_label}/trading_agents
+        Query: wallet_id_or_name in {"id", "name"}
+        """
+        params = {"wallet_id_or_name": by}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/trading_agents"
+        )
+        return self._get(path, params=params)
+
     def get_wallet_contents(
         self,
         organization_id: str,
@@ -105,6 +163,306 @@ class Market(SyncAPIResource):
         params = {"wallet_id_or_name": by}
         path = f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/wallet_contents"
         return self._get(path, params=params)
+
+    def add_wallet(
+        self,
+        organization_id: str,
+        wallet_name: str,
+        set_value_lower_bound_to_zero: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_name}/add_wallet
+        """
+        params = {"set_value_lower_bound_to_zero": set_value_lower_bound_to_zero}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_name}/add_wallet"
+        )
+        return self._post(path, params=params)
+
+    def delete_wallet(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        DELETE /api/market/organizations/{organization_id}/wallets/{wallet_label}/delete_wallet
+        Query: wallet_id_or_name in {"id", "name"}
+        """
+        params = {"wallet_id_or_name": by}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/delete_wallet"
+        )
+        return self._delete(path, params=params)
+
+    def set_value_lower_bound(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        new_value_lower_bound: Optional[Dict[str, int]] = None,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/set_value_lower_bound
+        """
+        params = {"wallet_id_or_name": by}
+        body = {"new_value_lower_bound": new_value_lower_bound}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/set_value_lower_bound"
+        )
+        return self._post(path, params=params, json=body)
+
+    def set_trading_agents(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        new_trading_agents: List[str],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/set_trading_agents
+        """
+        params = {"wallet_id_or_name": by}
+        body = {"new_trading_agents": new_trading_agents}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/set_trading_agents"
+        )
+        return self._post(path, params=params, json=body)
+
+    def add_to_balance(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        amount: Dict[str, int],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/add_to_balance
+        """
+        params = {"wallet_id_or_name": by}
+        body = {"amount": amount}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/add_to_balance"
+        )
+        return self._post(path, params=params, json=body)
+
+    def withdraw_from_balance(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        amount: Dict[str, int],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/withdraw_from_balance
+        """
+        params = {"wallet_id_or_name": by}
+        body = {"amount": amount}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/withdraw_from_balance"
+        )
+        return self._post(path, params=params, json=body)
+
+    def merge_wallets(
+        self,
+        organization_id: str,
+        source_wallet_labels: List[str],
+        target_wallet_label: str,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/merge_wallets
+        """
+        params = {"wallet_id_or_name": by}
+        body = {
+            "source_wallet_labels": source_wallet_labels,
+            "target_wallet_label": target_wallet_label,
+        }
+        path = f"/api/market/organizations/{organization_id}/merge_wallets"
+        return self._post(path, params=params, json=body)
+
+    def evaluate_wallet_contents_minimum_value(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        GET /api/market/organizations/{organization_id}/wallets/{wallet_label}/evaluate_wallet_contents_minimum_value
+        """
+        params = {"wallet_id_or_name": by}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/evaluate_wallet_contents_minimum_value"
+        )
+        return self._get(path, params=params)
+
+    def general_wallets_update(
+        self,
+        organization_id: str,
+        request_body: Dict[str, Any],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/general_wallets_update
+        """
+        params = {"wallet_id_or_name": by}
+        path = f"/api/market/organizations/{organization_id}/general_wallets_update"
+        return self._post(path, params=params, json=request_body)
+
+    def transfer_balance_between_wallets(
+        self,
+        organization_id: str,
+        wallet_label_to_new_balance: Dict[str, Dict[str, int]],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/transfer_balance_between_wallets
+        """
+        params = {"wallet_id_or_name": by}
+        body = {"wallet_label_to_new_balance": wallet_label_to_new_balance}
+        path = f"/api/market/organizations/{organization_id}/transfer_balance_between_wallets"
+        return self._post(path, params=params, json=body)
+
+    def transfer_assets_between_wallets(
+        self,
+        organization_id: str,
+        private_asset_to_new_wallet: Dict[str, str],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/transfer_assets_between_wallets
+        """
+        params = {"wallet_id_or_name": by}
+        body = {"private_asset_to_new_wallet": private_asset_to_new_wallet}
+        path = f"/api/market/organizations/{organization_id}/transfer_assets_between_wallets"
+        return self._post(path, params=params, json=body)
+
+    def create_offers(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        desired_offers: List[Dict[str, Any]],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/create_offers
+        """
+        params = {"wallet_id_or_name": by}
+        body = {"desired_offers": desired_offers}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/create_offers"
+        )
+        return self._post(path, params=params, json=body)
+
+    def merge_assets(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        assets_to_merge: List[str],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/merge_assets
+        """
+        params = {"wallet_id_or_name": by}
+        body = {"assets_to_merge": assets_to_merge}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/merge_assets"
+        )
+        return self._post(path, params=params, json=body)
+
+    def attempt_to_sell_assets(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        asset_to_number_of_units_and_price_per_unit: Dict[str, List[int]],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/attempt_to_sell_assets
+        """
+        params = {"wallet_id_or_name": by}
+        body = {
+            "asset_to_number_of_units_and_price_per_unit": (
+                asset_to_number_of_units_and_price_per_unit
+            )
+        }
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/attempt_to_sell_assets"
+        )
+        return self._post(path, params=params, json=body)
+
+    def force_liquidate_all(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/force_liquidate_all_assets_and_offers
+        """
+        params = {"wallet_id_or_name": by}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/force_liquidate_all_assets_and_offers"
+        )
+        return self._post(path, params=params)
+
+    def force_liquidate_some(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        assets_to_liquidate: List[str],
+        offers_to_liquidate: List[str],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/force_liquidate_some_assets_and_offers
+        """
+        params = {"wallet_id_or_name": by}
+        body = {
+            "assets_to_liquidate": assets_to_liquidate,
+            "offers_to_liquidate": offers_to_liquidate,
+        }
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/force_liquidate_some_assets_and_offers"
+        )
+        return self._post(path, params=params, json=body)
+
+    def take_from_offer(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        offer_id: str,
+        quantity: int,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/take_from_offer
+        """
+        params = {"wallet_id_or_name": by}
+        body = {"offer_id": offer_id, "quantity": quantity}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/take_from_offer"
+        )
+        return self._post(path, params=params, json=body)
+
+    def new_offer_quantity(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        offer_id: str,
+        new_quantity: int,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        """
+        POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/offers/{offer_id}/new_offer_quantity
+        """
+        params = {"wallet_id_or_name": by}
+        body = {"new_quantity": new_quantity}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/offers/{offer_id}/new_offer_quantity"
+        )
+        return self._post(path, params=params, json=body)
 
     # ---- offers / targets / assets ----
 
@@ -180,6 +538,10 @@ class AsyncMarket(AsyncAPIResource):
     async def list_organization_agents(self, organization_id: str) -> List[Dict[str, Any]]:
         return await self._get(f"/api/market/organizations/{organization_id}/agents")
 
+    async def find_organizations(self, agent_ids: List[str]) -> Dict[str, Any]:
+        params = [("agent_ids", aid) for aid in agent_ids]
+        return await self._request("GET", "/api/market/find_organizations", params=params)
+
     async def list_all_wallets(self) -> List[Dict[str, Any]]:
         return await self._get("/api/market/all_wallets")
 
@@ -190,6 +552,28 @@ class AsyncMarket(AsyncAPIResource):
     async def list_organization_wallets(self, organization_id: str) -> List[Dict[str, Any]]:
         return await self._get(f"/api/market/organizations/{organization_id}/wallets")
 
+    async def get_agent_trading_wallets(
+        self,
+        organization_id: str,
+        agent_id: str,
+    ) -> List[Dict[str, Any]]:
+        path = (
+            f"/api/market/organizations/{organization_id}/agents/{agent_id}/trading_wallets"
+        )
+        return await self._get(path)
+
+    async def get_wallet_trading_agents(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        by: str = "name",
+    ) -> List[Dict[str, Any]]:
+        params = {"wallet_id_or_name": by}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/trading_agents"
+        )
+        return await self._get(path, params=params)
+
     async def get_wallet_contents(
         self,
         organization_id: str,
@@ -199,6 +583,251 @@ class AsyncMarket(AsyncAPIResource):
         params = {"wallet_id_or_name": by}
         path = f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/wallet_contents"
         return await self._get(path, params=params)
+
+    async def add_wallet(
+        self,
+        organization_id: str,
+        wallet_name: str,
+        set_value_lower_bound_to_zero: bool = True,
+    ) -> Dict[str, Any]:
+        params = {"set_value_lower_bound_to_zero": set_value_lower_bound_to_zero}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_name}/add_wallet"
+        )
+        return await self._post(path, params=params)
+
+    async def delete_wallet(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/delete_wallet"
+        )
+        return await self._delete(path, params=params)
+
+    async def set_value_lower_bound(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        new_value_lower_bound: Optional[Dict[str, int]] = None,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {"new_value_lower_bound": new_value_lower_bound}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/set_value_lower_bound"
+        )
+        return await self._post(path, params=params, json=body)
+
+    async def set_trading_agents(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        new_trading_agents: List[str],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {"new_trading_agents": new_trading_agents}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/set_trading_agents"
+        )
+        return await self._post(path, params=params, json=body)
+
+    async def add_to_balance(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        amount: Dict[str, int],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {"amount": amount}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/add_to_balance"
+        )
+        return await self._post(path, params=params, json=body)
+
+    async def withdraw_from_balance(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        amount: Dict[str, int],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {"amount": amount}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/withdraw_from_balance"
+        )
+        return await self._post(path, params=params, json=body)
+
+    async def merge_wallets(
+        self,
+        organization_id: str,
+        source_wallet_labels: List[str],
+        target_wallet_label: str,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {
+            "source_wallet_labels": source_wallet_labels,
+            "target_wallet_label": target_wallet_label,
+        }
+        path = f"/api/market/organizations/{organization_id}/merge_wallets"
+        return await self._post(path, params=params, json=body)
+
+    async def evaluate_wallet_contents_minimum_value(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/evaluate_wallet_contents_minimum_value"
+        )
+        return await self._get(path, params=params)
+
+    async def general_wallets_update(
+        self,
+        organization_id: str,
+        request_body: Dict[str, Any],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        path = f"/api/market/organizations/{organization_id}/general_wallets_update"
+        return await self._post(path, params=params, json=request_body)
+
+    async def transfer_balance_between_wallets(
+        self,
+        organization_id: str,
+        wallet_label_to_new_balance: Dict[str, Dict[str, int]],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {"wallet_label_to_new_balance": wallet_label_to_new_balance}
+        path = f"/api/market/organizations/{organization_id}/transfer_balance_between_wallets"
+        return await self._post(path, params=params, json=body)
+
+    async def transfer_assets_between_wallets(
+        self,
+        organization_id: str,
+        private_asset_to_new_wallet: Dict[str, str],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {"private_asset_to_new_wallet": private_asset_to_new_wallet}
+        path = f"/api/market/organizations/{organization_id}/transfer_assets_between_wallets"
+        return await self._post(path, params=params, json=body)
+
+    async def create_offers(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        desired_offers: List[Dict[str, Any]],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {"desired_offers": desired_offers}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/create_offers"
+        )
+        return await self._post(path, params=params, json=body)
+
+    async def merge_assets(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        assets_to_merge: List[str],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {"assets_to_merge": assets_to_merge}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/merge_assets"
+        )
+        return await self._post(path, params=params, json=body)
+
+    async def attempt_to_sell_assets(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        asset_to_number_of_units_and_price_per_unit: Dict[str, List[int]],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {
+            "asset_to_number_of_units_and_price_per_unit": (
+                asset_to_number_of_units_and_price_per_unit
+            )
+        }
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/attempt_to_sell_assets"
+        )
+        return await self._post(path, params=params, json=body)
+
+    async def force_liquidate_all(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/force_liquidate_all_assets_and_offers"
+        )
+        return await self._post(path, params=params)
+
+    async def force_liquidate_some(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        assets_to_liquidate: List[str],
+        offers_to_liquidate: List[str],
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {
+            "assets_to_liquidate": assets_to_liquidate,
+            "offers_to_liquidate": offers_to_liquidate,
+        }
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/force_liquidate_some_assets_and_offers"
+        )
+        return await self._post(path, params=params, json=body)
+
+    async def take_from_offer(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        offer_id: str,
+        quantity: int,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {"offer_id": offer_id, "quantity": quantity}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/take_from_offer"
+        )
+        return await self._post(path, params=params, json=body)
+
+    async def new_offer_quantity(
+        self,
+        organization_id: str,
+        wallet_label: str,
+        offer_id: str,
+        new_quantity: int,
+        by: str = "name",
+    ) -> Dict[str, Any]:
+        params = {"wallet_id_or_name": by}
+        body = {"new_quantity": new_quantity}
+        path = (
+            f"/api/market/organizations/{organization_id}/wallets/{wallet_label}/offers/{offer_id}/new_offer_quantity"
+        )
+        return await self._post(path, params=params, json=body)
 
     async def list_offers(self) -> List[Dict[str, Any]]:
         return await self._get("/api/market/offers")
