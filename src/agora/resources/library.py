@@ -1,4 +1,5 @@
 from .._client import AgoraClient
+from .._paths import library_path
 from .._resource import SyncAPIResource, AsyncAPIResource
 
 from typing import Any, Dict, List, Optional
@@ -33,12 +34,11 @@ class Library(SyncAPIResource):
         """
         if path.startswith("/api/"):
             return self._request(method, path, params=params, json=json)
-        normalized = path if path.startswith("/") else f"/{path}"
-        return self._request(method, f"/api/library{normalized}", params=params, json=json)
+        return self._request(method, library_path(path), params=params, json=json)
 
     def health(self) -> Dict[str, Any]:
         """GET /api/library/health"""
-        return self._get("/api/library/health")
+        return self._get(library_path("health"))
 
     def list_files(
         self,
@@ -56,7 +56,7 @@ class Library(SyncAPIResource):
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
-        return self._get("/api/library/library", params=params or None)
+        return self._get(library_path("library"), params=params or None)
 
     def get_file(
         self,
@@ -75,7 +75,7 @@ class Library(SyncAPIResource):
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
-        return self._get("/api/library/library_file", params=params)
+        return self._get(library_path("library_file"), params=params)
 
     def search(
         self,
@@ -95,7 +95,7 @@ class Library(SyncAPIResource):
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
-        return self._get("/api/library/search", params=params)
+        return self._get(library_path("search"), params=params)
 
     def list_targets(
         self,
@@ -112,7 +112,7 @@ class Library(SyncAPIResource):
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
-        return self._get("/api/library/targets", params=params or None)
+        return self._get(library_path("targets"), params=params or None)
 
     def get_target_file(
         self,
@@ -131,7 +131,7 @@ class Library(SyncAPIResource):
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
-        return self._get("/api/library/target_file", params=params)
+        return self._get(library_path("target_file"), params=params)
 
     def add_contribution(
         self,
@@ -160,7 +160,7 @@ class Library(SyncAPIResource):
         if repo_rev:
             body["repo_rev"] = repo_rev
 
-        return self._post("/api/library/add_contribution", json=body)
+        return self._post(library_path("add_contribution"), json=body)
 
 
 class AsyncLibrary(AsyncAPIResource):
@@ -184,13 +184,10 @@ class AsyncLibrary(AsyncAPIResource):
         """
         if path.startswith("/api/"):
             return await self._request(method, path, params=params, json=json)
-        normalized = path if path.startswith("/") else f"/{path}"
-        return await self._request(
-            method, f"/api/library{normalized}", params=params, json=json
-        )
+        return await self._request(method, library_path(path), params=params, json=json)
 
     async def health(self) -> Dict[str, Any]:
-        return await self._get("/api/library/health")
+        return await self._get(library_path("health"))
 
     async def list_files(
         self,
@@ -202,7 +199,7 @@ class AsyncLibrary(AsyncAPIResource):
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
-        return await self._get("/api/library/library", params=params or None)
+        return await self._get(library_path("library"), params=params or None)
 
     async def get_file(
         self,
@@ -215,7 +212,7 @@ class AsyncLibrary(AsyncAPIResource):
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
-        return await self._get("/api/library/library_file", params=params)
+        return await self._get(library_path("library_file"), params=params)
 
     async def search(
         self,
@@ -229,7 +226,7 @@ class AsyncLibrary(AsyncAPIResource):
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
-        return await self._get("/api/library/search", params=params)
+        return await self._get(library_path("search"), params=params)
 
     async def list_targets(
         self,
@@ -241,7 +238,7 @@ class AsyncLibrary(AsyncAPIResource):
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
-        return await self._get("/api/library/targets", params=params or None)
+        return await self._get(library_path("targets"), params=params or None)
 
     async def get_target_file(
         self,
@@ -254,7 +251,7 @@ class AsyncLibrary(AsyncAPIResource):
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
-        return await self._get("/api/library/target_file", params=params)
+        return await self._get(library_path("target_file"), params=params)
 
     async def add_contribution(
         self,
@@ -272,4 +269,4 @@ class AsyncLibrary(AsyncAPIResource):
         if repo_rev:
             body["repo_rev"] = repo_rev
 
-        return await self._post("/api/library/add_contribution", json=body)
+        return await self._post(library_path("add_contribution"), json=body)

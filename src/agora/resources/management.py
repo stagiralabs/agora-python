@@ -1,4 +1,5 @@
 from .._client import AgoraClient
+from .._paths import api_path, agents_path, organizations_path
 from .._resource import SyncAPIResource, AsyncAPIResource
 
 from typing import Any, Dict, List, Optional
@@ -37,8 +38,7 @@ class Management(SyncAPIResource):
         """
         if path.startswith("/api/"):
             return self._request(method, path, params=params, json=json)
-        normalized = path if path.startswith("/") else f"/{path}"
-        return self._request(method, f"/api{normalized}", params=params, json=json)
+        return self._request(method, api_path(path), params=params, json=json)
 
     # ---- registration ----
 
@@ -63,7 +63,7 @@ class Management(SyncAPIResource):
             "organization_name": organization_name,
             "agent_name": agent_name,
         }
-        return self._post("/api/organizations", json=body)
+        return self._post(organizations_path(), json=body)
 
     # ---- organizations ----
 
@@ -73,7 +73,7 @@ class Management(SyncAPIResource):
 
         GET /api/organizations
         """
-        return self._get("/api/organizations")
+        return self._get(organizations_path())
 
     def get_organization(self, organization_id: str) -> Dict[str, Any]:
         """
@@ -81,7 +81,7 @@ class Management(SyncAPIResource):
 
         GET /api/organizations/{organization_id}
         """
-        return self._get(f"/api/organizations/{organization_id}")
+        return self._get(organizations_path(organization_id))
 
     def update_organization_name(self, organization_id: str, new_name: str) -> Dict[str, Any]:
         """
@@ -91,7 +91,7 @@ class Management(SyncAPIResource):
         Body: OrganizationUpdate { organization_name: str }
         """
         body = {"organization_name": new_name}
-        return self._put(f"/api/organizations/{organization_id}/name", json=body)
+        return self._put(organizations_path(organization_id, "name"), json=body)
 
     def deactivate_organization(self, organization_id: str) -> None:
         """
@@ -99,7 +99,7 @@ class Management(SyncAPIResource):
 
         DELETE /api/organizations/{organization_id}
         """
-        self._delete(f"/api/organizations/{organization_id}")
+        self._delete(organizations_path(organization_id))
 
     # ---- agents ----
 
@@ -109,7 +109,7 @@ class Management(SyncAPIResource):
 
         GET /api/organizations/{organization_id}/agents
         """
-        return self._get(f"/api/organizations/{organization_id}/agents")
+        return self._get(organizations_path(organization_id, "agents"))
 
     def create_agent(
         self,
@@ -124,7 +124,7 @@ class Management(SyncAPIResource):
         Body: AgentCreate { agent_name, is_admin }
         """
         body = {"agent_name": agent_name, "is_admin": is_admin}
-        return self._post(f"/api/organizations/{organization_id}/agents", json=body)
+        return self._post(organizations_path(organization_id, "agents"), json=body)
 
     def get_agent(self, agent_id: str) -> Dict[str, Any]:
         """
@@ -132,7 +132,7 @@ class Management(SyncAPIResource):
 
         GET /api/agents/{agent_id}
         """
-        return self._get(f"/api/agents/{agent_id}")
+        return self._get(agents_path(agent_id))
 
     def update_agent_name(self, agent_id: str, new_name: str) -> Dict[str, Any]:
         """
@@ -142,7 +142,7 @@ class Management(SyncAPIResource):
         Body: AgentUpdate { agent_name: str }
         """
         body = {"agent_name": new_name}
-        return self._put(f"/api/agents/{agent_id}/name", json=body)
+        return self._put(agents_path(agent_id, "name"), json=body)
 
     def update_agent_admin_status(self, agent_id: str, is_admin: bool) -> Dict[str, Any]:
         """
@@ -152,7 +152,7 @@ class Management(SyncAPIResource):
         Body: AgentUpdate { is_admin: bool }
         """
         body = {"is_admin": is_admin}
-        return self._put(f"/api/agents/{agent_id}/admin", json=body)
+        return self._put(agents_path(agent_id, "admin"), json=body)
 
     def deactivate_agent(self, agent_id: str) -> None:
         """
@@ -160,7 +160,7 @@ class Management(SyncAPIResource):
 
         DELETE /api/agents/{agent_id}
         """
-        self._delete(f"/api/agents/{agent_id}")
+        self._delete(agents_path(agent_id))
 
 
 class AsyncManagement(AsyncAPIResource):
@@ -197,8 +197,7 @@ class AsyncManagement(AsyncAPIResource):
         """
         if path.startswith("/api/"):
             return await self._request(method, path, params=params, json=json)
-        normalized = path if path.startswith("/") else f"/{path}"
-        return await self._request(method, f"/api{normalized}", params=params, json=json)
+        return await self._request(method, api_path(path), params=params, json=json)
 
     async def register(
         self,
@@ -209,23 +208,23 @@ class AsyncManagement(AsyncAPIResource):
             "organization_name": organization_name,
             "agent_name": agent_name,
         }
-        return await self._post("/api/organizations", json=body)
+        return await self._post(organizations_path(), json=body)
 
     async def list_organizations(self) -> List[Dict[str, Any]]:
-        return await self._get("/api/organizations")
+        return await self._get(organizations_path())
 
     async def get_organization(self, organization_id: str) -> Dict[str, Any]:
-        return await self._get(f"/api/organizations/{organization_id}")
+        return await self._get(organizations_path(organization_id))
 
     async def update_organization_name(self, organization_id: str, new_name: str) -> Dict[str, Any]:
         body = {"organization_name": new_name}
-        return await self._put(f"/api/organizations/{organization_id}/name", json=body)
+        return await self._put(organizations_path(organization_id, "name"), json=body)
 
     async def deactivate_organization(self, organization_id: str) -> None:
-        await self._delete(f"/api/organizations/{organization_id}")
+        await self._delete(organizations_path(organization_id))
 
     async def list_agents(self, organization_id: str) -> List[Dict[str, Any]]:
-        return await self._get(f"/api/organizations/{organization_id}/agents")
+        return await self._get(organizations_path(organization_id, "agents"))
 
     async def create_agent(
         self,
@@ -234,18 +233,18 @@ class AsyncManagement(AsyncAPIResource):
         is_admin: bool = False,
     ) -> Dict[str, Any]:
         body = {"agent_name": agent_name, "is_admin": is_admin}
-        return await self._post(f"/api/organizations/{organization_id}/agents", json=body)
+        return await self._post(organizations_path(organization_id, "agents"), json=body)
 
     async def get_agent(self, agent_id: str) -> Dict[str, Any]:
-        return await self._get(f"/api/agents/{agent_id}")
+        return await self._get(agents_path(agent_id))
 
     async def update_agent_name(self, agent_id: str, new_name: str) -> Dict[str, Any]:
         body = {"agent_name": new_name}
-        return await self._put(f"/api/agents/{agent_id}/name", json=body)
+        return await self._put(agents_path(agent_id, "name"), json=body)
 
     async def update_agent_admin_status(self, agent_id: str, is_admin: bool) -> Dict[str, Any]:
         body = {"is_admin": is_admin}
-        return await self._put(f"/api/agents/{agent_id}/admin", json=body)
+        return await self._put(agents_path(agent_id, "admin"), json=body)
 
     async def deactivate_agent(self, agent_id: str) -> None:
-        await self._delete(f"/api/agents/{agent_id}")
+        await self._delete(agents_path(agent_id))
