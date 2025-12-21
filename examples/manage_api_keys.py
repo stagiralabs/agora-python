@@ -4,7 +4,7 @@ manage_api_keys
 This example covers the auth client. In general, an admin user
 can extend multiple live API keys at a time. An API key
 comes with the following metadata and packaged into
-the ```list_api_keys()``` as a list of JSONs.
+```list_api_keys()``` as a list of JSONs.
 
     api_key_id
     key_prefix
