@@ -16,8 +16,9 @@ comes with the following metadata and packaged into
 """
 import os
 from agora import AgoraClient, AgoraError
+from agora._paths import resolve_base_url
 
-BASE_URL = os.environ.get("AGORA_BASE_URL", "http://localhost:8000")
+BASE_URL = resolve_base_url()
 
 
 def main() -> None:

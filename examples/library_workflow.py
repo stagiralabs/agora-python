@@ -2,9 +2,10 @@ import os
 from pprint import pprint
 
 from agora import AgoraClient, AgoraError
+from agora._paths import resolve_base_url
 
 
-BASE_URL = os.environ.get("AGORA_BASE_URL", "http://localhost:8000")
+BASE_URL = resolve_base_url()
 SEARCH_QUERY = os.environ.get("AGORA_SEARCH_QUERY", "Pythagorean Theorem")
 REPO_URL = os.environ.get("AGORA_REPO_URL")
 REPO_REV = os.environ.get("AGORA_REPO_REV")

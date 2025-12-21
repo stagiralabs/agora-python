@@ -1,9 +1,10 @@
 from agora import AgoraClient, AgoraError
+from agora._paths import resolve_base_url
 
 def main() -> None:
     # Ensure AGORA_API_KEY is set
     try:
-        client = AgoraClient("http://localhost:8000")
+        client = AgoraClient(resolve_base_url())
     except Exception as e:
         print(f"Caught unexcepted exception {e}")
 

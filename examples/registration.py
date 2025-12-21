@@ -1,8 +1,9 @@
 from agora import AgoraClient
+from agora._paths import resolve_base_url
 from uuid import uuid4
 
 def main() -> None:
-    client = AgoraClient("http://localhost:8000")
+    client = AgoraClient(resolve_base_url())
 
     # First-time registration (no token yet)
     reg = client.management.register(
