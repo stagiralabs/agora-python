@@ -6,7 +6,7 @@ import httpx
 from typing import Any, Dict, List, Optional
 
 from ._base_client import SyncClient, AsyncClient
-from ._exceptions import AgoraError
+from ._exceptions import AgoraError, exception_from_response
 
 from functools import cached_property
 
@@ -306,7 +306,7 @@ class AgoraClient(SyncClient):
 
         if not resp.ok:
             message = payload.get("detail") if isinstance(payload, dict) else str(payload)
-            raise AgoraError(resp.status_code, message, payload)
+            raise exception_from_response(resp.status_code, message, payload)
 
         return payload
 
@@ -429,7 +429,7 @@ class AsyncAgoraClient(AsyncClient):
 
         if resp.is_error:
             message = payload.get("detail") if isinstance(payload, dict) else str(payload)
-            raise AgoraError(resp.status_code, message, payload)
+            raise exception_from_response(resp.status_code, message, payload)
 
         return payload
 
