@@ -7,6 +7,8 @@ dependencies = [
     "requests>=2.31.0",
     "httpx>=0.27.0",
     "pytest>=8.0.0",
+    "mypy>=1.11.0",
+    "types-requests>=2.31.0.20240311",
 ]
 
 [project.urls]
@@ -23,3 +25,13 @@ packages = ["src/agora"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.mypy]
+python_version = "3.9"
+pretty = true
+show_error_codes = true
+ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
+exclude = [
+    "^tests/",
+]

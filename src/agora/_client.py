@@ -3,9 +3,9 @@ import os
 import warnings
 import requests
 import httpx
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
-from ._base_client import SyncClient, AsyncClient
+from ._base_client import SyncClient, AsyncClient, ParamsType
 from ._exceptions import AgoraError, exception_from_response
 
 from functools import cached_property
@@ -275,7 +275,7 @@ class AgoraClient(SyncClient):
         method: str,
         path: str,
         *,
-        params: Optional[Dict[str, Any]] = None,
+        params: ParamsType = None,
         json: Optional[Dict[str, Any]] = None,
     ) -> Any:
         """
@@ -306,21 +306,25 @@ class AgoraClient(SyncClient):
 
         if not resp.ok:
             message = payload.get("detail") if isinstance(payload, dict) else str(payload)
+            if message is None:
+                message = ""
+            else:
+                message = str(message)
             raise exception_from_response(resp.status_code, message, payload)
 
         return payload
 
     # Convenience wrappers
-    def _get(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _get(self, path: str, *, params: ParamsType = None) -> Any:
         return self._request("GET", path, params=params)
 
-    def _post(self, path: str, *, json: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _post(self, path: str, *, json: Optional[Dict[str, Any]] = None, params: ParamsType = None) -> Any:
         return self._request("POST", path, params=params, json=json)
 
-    def _delete(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _delete(self, path: str, *, params: ParamsType = None) -> Any:
         return self._request("DELETE", path, params=params)
 
-    def _put(self, path: str, *, json: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _put(self, path: str, *, json: Optional[Dict[str, Any]] = None, params: ParamsType = None) -> Any:
         return self._request("PUT", path, params=params, json=json)
     
     # ------------- resource endpoints -------------
@@ -406,7 +410,7 @@ class AsyncAgoraClient(AsyncClient):
         method: str,
         path: str,
         *,
-        params: Optional[Dict[str, Any]] = None,
+        params: ParamsType = None,
         json: Optional[Dict[str, Any]] = None,
     ) -> Any:
         url = f"{self.base_url}{path}"
@@ -414,7 +418,7 @@ class AsyncAgoraClient(AsyncClient):
         resp = await self._session.request(
             method=method.upper(),
             url=url,
-            params=params,
+            params=cast(Any, params),
             json=json,
             timeout=self.timeout,
         )
@@ -429,6 +433,10 @@ class AsyncAgoraClient(AsyncClient):
 
         if resp.is_error:
             message = payload.get("detail") if isinstance(payload, dict) else str(payload)
+            if message is None:
+                message = ""
+            else:
+                message = str(message)
             raise exception_from_response(resp.status_code, message, payload)
 
         return payload

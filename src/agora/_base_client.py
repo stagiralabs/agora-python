@@ -1,5 +1,7 @@
 import abc
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
+
+ParamsType = Optional[Union[Dict[str, Any], Sequence[Tuple[str, Any]]]]
 
 
 class SyncClient(abc.ABC):
@@ -15,12 +17,12 @@ class SyncClient(abc.ABC):
         method: str,
         path: str,
         *,
-        params: Optional[Dict[str, Any]] = None,
+        params: ParamsType = None,
         json: Optional[Dict[str, Any]] = None,
     ) -> Any:
         raise NotImplementedError
 
-    def _get(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _get(self, path: str, *, params: ParamsType = None) -> Any:
         return self._request("GET", path, params=params)
 
     def _post(
@@ -28,11 +30,11 @@ class SyncClient(abc.ABC):
         path: str,
         *,
         json: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: ParamsType = None,
     ) -> Any:
         return self._request("POST", path, params=params, json=json)
 
-    def _delete(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+    def _delete(self, path: str, *, params: ParamsType = None) -> Any:
         return self._request("DELETE", path, params=params)
 
     def _put(
@@ -40,7 +42,7 @@ class SyncClient(abc.ABC):
         path: str,
         *,
         json: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: ParamsType = None,
     ) -> Any:
         return self._request("PUT", path, params=params, json=json)
 
@@ -58,12 +60,12 @@ class AsyncClient(abc.ABC):
         method: str,
         path: str,
         *,
-        params: Optional[Dict[str, Any]] = None,
+        params: ParamsType = None,
         json: Optional[Dict[str, Any]] = None,
     ) -> Any:
         raise NotImplementedError
 
-    async def _get(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+    async def _get(self, path: str, *, params: ParamsType = None) -> Any:
         return await self._request("GET", path, params=params)
 
     async def _post(
@@ -71,11 +73,11 @@ class AsyncClient(abc.ABC):
         path: str,
         *,
         json: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: ParamsType = None,
     ) -> Any:
         return await self._request("POST", path, params=params, json=json)
 
-    async def _delete(self, path: str, *, params: Optional[Dict[str, Any]] = None) -> Any:
+    async def _delete(self, path: str, *, params: ParamsType = None) -> Any:
         return await self._request("DELETE", path, params=params)
 
     async def _put(
@@ -83,6 +85,6 @@ class AsyncClient(abc.ABC):
         path: str,
         *,
         json: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: ParamsType = None,
     ) -> Any:
         return await self._request("PUT", path, params=params, json=json)
