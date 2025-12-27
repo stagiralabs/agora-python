@@ -328,7 +328,7 @@ class AgoraClient(SyncClient):
         self,
         path: str,
         *,
-        json: Optional[Dict[str, Any]] = None,
+        json: Optional[Any] = None,
         params: ParamsType = None,
     ) -> Any:
         return self._request("POST", path, params=params, json=json)
@@ -340,7 +340,7 @@ class AgoraClient(SyncClient):
         self,
         path: str,
         *,
-        json: Optional[Dict[str, Any]] = None,
+        json: Optional[Any] = None,
         params: ParamsType = None,
     ) -> Any:
         return self._request("PUT", path, params=params, json=json)

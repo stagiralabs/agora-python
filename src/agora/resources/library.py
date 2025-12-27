@@ -12,10 +12,12 @@ class Library(SyncAPIResource):
     Routes wrapped here:
         GET  /api/library/health
         GET  /api/library/library
+        GET  /api/library/repo_files
         GET  /api/library/library_file
         GET  /api/library/search
-        GET  /api/library/targets
+        GET  /api/library/search_all_repos
         GET  /api/library/target_file
+        GET  /api/library/target_content
         POST /api/library/add_contribution
     """
 
@@ -59,6 +61,24 @@ class Library(SyncAPIResource):
             params["repo_rev"] = repo_rev
         return self._get(library_path("library"), params=params or None)
 
+    def list_repo_files(
+        self,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get all files in the repository (not just Library/).
+
+        GET /api/library/repo_files
+        Query: repo_url?, repo_rev?
+        """
+        params: Dict[str, Any] = {}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return self._get(library_path("repo_files"), params=params or None)
+
     def get_file(
         self,
         file_name: str,
@@ -84,82 +104,92 @@ class Library(SyncAPIResource):
         k: int = 10,
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
+        search_mode: str = "syntactic",
     ) -> List[Dict[str, Any]]:
         """
-        Semantic search in the library.
+        Search the library for code declarations.
 
         GET /api/library/search
-        Query: query, k, repo_url?, repo_rev?
+        Query: query, k, repo_url, repo_rev, search_mode
         """
-        params: Dict[str, Any] = {"query": query, "k": k}
+        params: Dict[str, Any] = {"query": query, "k": k, "search_mode": search_mode}
         if repo_url:
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
         return self._get(library_path("search"), params=params)
 
-    def list_targets(
+    def search_all_repos(
         self,
-        repo_url: Optional[str] = None,
-        repo_rev: Optional[str] = None,
+        query: str,
+        k: int = 10,
+        search_mode: str = "syntactic",
     ) -> List[Dict[str, Any]]:
         """
-        Get all targets.
+        Search across all cached repositories.
 
-        GET /api/library/targets
+        GET /api/library/search_all_repos
+        Query: query, k, search_mode
         """
-        params: Dict[str, Any] = {}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
-        return self._get(library_path("targets"), params=params or None)
+        params: Dict[str, Any] = {"query": query, "k": k, "search_mode": search_mode}
+        return self._get(library_path("search_all_repos"), params=params)
 
     def get_target_file(
         self,
         target_id: str,
-        repo_url: Optional[str] = None,
-        repo_rev: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Get the file backing a given target.
 
         GET /api/library/target_file
-        Query: target_id, repo_url?, repo_rev?
+        Query: target_id
         """
-        params: Dict[str, Any] = {"target_id": target_id}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
-        return self._get(library_path("target_file"), params=params)
+        return self._get(library_path("target_file"), params={"target_id": target_id})
+
+    def get_target_content(
+        self,
+        target_id: str,
+    ) -> Dict[str, Any]:
+        """
+        Get the declaration content for a given target.
+
+        GET /api/library/target_content
+        Query: target_id
+        """
+        return self._get(
+            library_path("target_content"), params={"target_id": target_id}
+        )
 
     def add_contribution(
         self,
-        file_path: str,
+        name: str,
         file_content: str,
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
+        ephemeral: Optional[bool] = False,
     ) -> Dict[str, Any]:
         """
         Add a contribution to the library.
 
         POST /api/library/add_contribution
         Body: AddContributionRequest {
-            file_path: str,
+            name: str,
             file_content: str,
             repo_url?: str,
             repo_rev?: str,
+            ephemeral?: bool,
         }
         """
         body: Dict[str, Any] = {
-            "file_path": file_path,
+            "name": name,
             "file_content": file_content,
         }
         if repo_url:
             body["repo_url"] = repo_url
         if repo_rev:
             body["repo_rev"] = repo_rev
+        if ephemeral is not None:
+            body["ephemeral"] = ephemeral
 
         return self._post(library_path("add_contribution"), json=body)
 
@@ -202,6 +232,18 @@ class AsyncLibrary(AsyncAPIResource):
             params["repo_rev"] = repo_rev
         return await self._get(library_path("library"), params=params or None)
 
+    async def list_repo_files(
+        self,
+        repo_url: Optional[str] = None,
+        repo_rev: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        params: Dict[str, Any] = {}
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return await self._get(library_path("repo_files"), params=params or None)
+
     async def get_file(
         self,
         file_name: str,
@@ -221,53 +263,55 @@ class AsyncLibrary(AsyncAPIResource):
         k: int = 10,
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
+        search_mode: str = "syntactic",
     ) -> List[Dict[str, Any]]:
-        params: Dict[str, Any] = {"query": query, "k": k}
+        params: Dict[str, Any] = {"query": query, "k": k, "search_mode": search_mode}
         if repo_url:
             params["repo_url"] = repo_url
         if repo_rev:
             params["repo_rev"] = repo_rev
         return await self._get(library_path("search"), params=params)
 
-    async def list_targets(
+    async def search_all_repos(
         self,
-        repo_url: Optional[str] = None,
-        repo_rev: Optional[str] = None,
+        query: str,
+        k: int = 10,
+        search_mode: str = "syntactic",
     ) -> List[Dict[str, Any]]:
-        params: Dict[str, Any] = {}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
-        return await self._get(library_path("targets"), params=params or None)
+        params: Dict[str, Any] = {"query": query, "k": k, "search_mode": search_mode}
+        return await self._get(library_path("search_all_repos"), params=params)
 
     async def get_target_file(
         self,
         target_id: str,
-        repo_url: Optional[str] = None,
-        repo_rev: Optional[str] = None,
     ) -> Dict[str, Any]:
-        params: Dict[str, Any] = {"target_id": target_id}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
-        return await self._get(library_path("target_file"), params=params)
+        return await self._get(library_path("target_file"), params={"target_id": target_id})
+
+    async def get_target_content(
+        self,
+        target_id: str,
+    ) -> Dict[str, Any]:
+        return await self._get(
+            library_path("target_content"), params={"target_id": target_id}
+        )
 
     async def add_contribution(
         self,
-        file_path: str,
+        name: str,
         file_content: str,
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
+        ephemeral: Optional[bool] = False,
     ) -> Dict[str, Any]:
         body: Dict[str, Any] = {
-            "file_path": file_path,
+            "name": name,
             "file_content": file_content,
         }
         if repo_url:
             body["repo_url"] = repo_url
         if repo_rev:
             body["repo_rev"] = repo_rev
+        if ephemeral is not None:
+            body["ephemeral"] = ephemeral
 
         return await self._post(library_path("add_contribution"), json=body)
