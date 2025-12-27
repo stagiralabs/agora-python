@@ -6,7 +6,12 @@ def test_path_helper_strips_slashes() -> None:
 
 
 def test_path_helper_no_parts_returns_base() -> None:
-    assert _paths._path("/api/",) == "/api"
+    assert (
+        _paths._path(
+            "/api/",
+        )
+        == "/api"
+    )
 
 
 def test_resolve_base_url_prefers_explicit_env(monkeypatch) -> None:
