@@ -18,7 +18,7 @@ class SyncClient(abc.ABC):
         path: str,
         *,
         params: ParamsType = None,
-        json: Optional[Dict[str, Any]] = None,
+        json: Optional[Any] = None,
     ) -> Any:
         raise NotImplementedError
 
@@ -29,7 +29,7 @@ class SyncClient(abc.ABC):
         self,
         path: str,
         *,
-        json: Optional[Dict[str, Any]] = None,
+        json: Optional[Any] = None,
         params: ParamsType = None,
     ) -> Any:
         return self._request("POST", path, params=params, json=json)
@@ -41,7 +41,7 @@ class SyncClient(abc.ABC):
         self,
         path: str,
         *,
-        json: Optional[Dict[str, Any]] = None,
+        json: Optional[Any] = None,
         params: ParamsType = None,
     ) -> Any:
         return self._request("PUT", path, params=params, json=json)
@@ -61,7 +61,7 @@ class AsyncClient(abc.ABC):
         path: str,
         *,
         params: ParamsType = None,
-        json: Optional[Dict[str, Any]] = None,
+        json: Optional[Any] = None,
     ) -> Any:
         raise NotImplementedError
 
@@ -72,7 +72,7 @@ class AsyncClient(abc.ABC):
         self,
         path: str,
         *,
-        json: Optional[Dict[str, Any]] = None,
+        json: Optional[Any] = None,
         params: ParamsType = None,
     ) -> Any:
         return await self._request("POST", path, params=params, json=json)
@@ -84,7 +84,7 @@ class AsyncClient(abc.ABC):
         self,
         path: str,
         *,
-        json: Optional[Dict[str, Any]] = None,
+        json: Optional[Any] = None,
         params: ParamsType = None,
     ) -> Any:
         return await self._request("PUT", path, params=params, json=json)

@@ -118,15 +118,29 @@ class Management(SyncAPIResource):
         self,
         organization_id: str,
         agent_name: str,
-        is_admin: bool = False,
     ) -> Dict[str, Any]:
         """
-        Create a new agent in the organization.
+        Create a single new agent in the organization.
 
         POST /api/organizations/{organization_id}/agents
-        Body: AgentCreate { agent_name, is_admin }
+        Body: CreateAgentsRequest { agent_names: [str, ...] }
+        Returns: CreateAgentsResponse { agents: [...], invite_tokens: [...] }
         """
-        body = {"agent_name": agent_name, "is_admin": is_admin}
+        return self.create_agents(organization_id, [agent_name])
+
+    def create_agents(
+        self,
+        organization_id: str,
+        agent_names: List[str],
+    ) -> Dict[str, Any]:
+        """
+        Create multiple agents in the organization (admin only).
+
+        POST /api/organizations/{organization_id}/agents
+        Body: CreateAgentsRequest { agent_names: [str, ...] }
+        Returns: CreateAgentsResponse { agents: [...], invite_tokens: [...] }
+        """
+        body = {"agent_names": agent_names}
         return self._post(organizations_path(organization_id, "agents"), json=body)
 
     def get_agent(self, agent_id: str) -> Dict[str, Any]:
@@ -237,9 +251,15 @@ class AsyncManagement(AsyncAPIResource):
         self,
         organization_id: str,
         agent_name: str,
-        is_admin: bool = False,
     ) -> Dict[str, Any]:
-        body = {"agent_name": agent_name, "is_admin": is_admin}
+        return await self.create_agents(organization_id, [agent_name])
+
+    async def create_agents(
+        self,
+        organization_id: str,
+        agent_names: List[str],
+    ) -> Dict[str, Any]:
+        body = {"agent_names": agent_names}
         return await self._post(
             organizations_path(organization_id, "agents"), json=body
         )

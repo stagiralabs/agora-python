@@ -31,11 +31,7 @@ def main() -> None:
     pprint(results)
 
     if TARGET_ID:
-        target = client.library.get_target_file(
-            TARGET_ID,
-            repo_url=REPO_URL,
-            repo_rev=REPO_REV,
-        )
+        target = client.library.get_target_file(TARGET_ID)
         print(f"Target {TARGET_ID}:")
         pprint(target)
     else:

@@ -3,8 +3,7 @@ from typing import TYPE_CHECKING
 from .._client import AgoraClient
 from .._paths import market_path, market_organizations_path
 from .._resource import SyncAPIResource, AsyncAPIResource
-from .._asset import str_to_asset
-from ..asset import Asset, asset_to_str
+from .._asset import Asset, asset_to_str, str_to_asset
 
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -16,11 +15,12 @@ _ASSET_PREFIXES: Tuple[str, ...] = (
     "ConstantAsset(",
     "SatisfiedByAsset(",
     "AgentsSatisfyByAsset(",
-    "TimeProvenAsset(",
+    "TimeRemainingAsset(",
     "MaxAsset(",
     "MinAsset(",
     "LinearCombinationAsset(",
-    "PayForQuickProofAsset(",
+    "PriceySatisfiedByAsset(",
+    "PriceyTimeRemainingAsset(",
 )
 
 
@@ -295,11 +295,10 @@ class Market(SyncAPIResource):
         POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/set_value_lower_bound
         """
         params = {"wallet_id_or_name": by}
-        body = {"new_value_lower_bound": new_value_lower_bound}
         path = market_organizations_path(
             organization_id, "wallets", wallet_label, "set_value_lower_bound"
         )
-        return self._post(path, params=params, json=body)
+        return self._post(path, params=params, json=new_value_lower_bound)
 
     def set_trading_agents(
         self,
@@ -312,11 +311,10 @@ class Market(SyncAPIResource):
         POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/set_trading_agents
         """
         params = {"wallet_id_or_name": by}
-        body = {"new_trading_agents": new_trading_agents}
         path = market_organizations_path(
             organization_id, "wallets", wallet_label, "set_trading_agents"
         )
-        return self._post(path, params=params, json=body)
+        return self._post(path, params=params, json=new_trading_agents)
 
     def add_to_balance(
         self,
@@ -329,11 +327,10 @@ class Market(SyncAPIResource):
         POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/add_to_balance
         """
         params = {"wallet_id_or_name": by}
-        body = {"amount": amount}
         path = market_organizations_path(
             organization_id, "wallets", wallet_label, "add_to_balance"
         )
-        return self._post(path, params=params, json=body)
+        return self._post(path, params=params, json=amount)
 
     def withdraw_from_balance(
         self,
@@ -346,11 +343,10 @@ class Market(SyncAPIResource):
         POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/withdraw_from_balance
         """
         params = {"wallet_id_or_name": by}
-        body = {"amount": amount}
         path = market_organizations_path(
             organization_id, "wallets", wallet_label, "withdraw_from_balance"
         )
-        return self._post(path, params=params, json=body)
+        return self._post(path, params=params, json=amount)
 
     def merge_wallets(
         self,
@@ -411,11 +407,10 @@ class Market(SyncAPIResource):
         POST /api/market/organizations/{organization_id}/transfer_balance_between_wallets
         """
         params = {"wallet_id_or_name": by}
-        body = {"wallet_label_to_new_balance": wallet_label_to_new_balance}
         path = market_organizations_path(
             organization_id, "transfer_balance_between_wallets"
         )
-        return self._post(path, params=params, json=body)
+        return self._post(path, params=params, json=wallet_label_to_new_balance)
 
     def transfer_assets_between_wallets(
         self,
@@ -427,7 +422,7 @@ class Market(SyncAPIResource):
         POST /api/market/organizations/{organization_id}/transfer_assets_between_wallets
         """
         params = {"wallet_id_or_name": by}
-        body = {"private_asset_to_new_wallet": _serialize_assets(private_asset_to_new_wallet)}
+        body = _serialize_assets(private_asset_to_new_wallet)
         path = market_organizations_path(
             organization_id, "transfer_assets_between_wallets"
         )
@@ -471,17 +466,17 @@ class Market(SyncAPIResource):
         self,
         organization_id: str,
         wallet_label: str,
-        asset_to_number_of_units_and_price_per_unit: Dict[Union[str, Asset], List[int]],
+        asset_to_sale_data: Dict[Union[str, Asset], List[Any]],
         by: str = "name",
     ) -> Dict[str, Any]:
         """
         POST /api/market/organizations/{organization_id}/wallets/{wallet_label}/attempt_to_sell_assets
+
+        asset_to_sale_data maps asset_id to [number_of_pieces, pieces_to_sell, price_per_piece].
         """
         params = {"wallet_id_or_name": by}
         body = {
-            "asset_to_number_of_units_and_price_per_unit": (
-                _serialize_assets(asset_to_number_of_units_and_price_per_unit)
-            )
+            "asset_to_sale_data": _serialize_assets(asset_to_sale_data)
         }
         path = market_organizations_path(
             organization_id, "wallets", wallet_label, "attempt_to_sell_assets"
@@ -766,11 +761,10 @@ class AsyncMarket(AsyncAPIResource):
         by: str = "name",
     ) -> Dict[str, Any]:
         params = {"wallet_id_or_name": by}
-        body = {"new_value_lower_bound": new_value_lower_bound}
         path = market_organizations_path(
             organization_id, "wallets", wallet_label, "set_value_lower_bound"
         )
-        return await self._post(path, params=params, json=body)
+        return await self._post(path, params=params, json=new_value_lower_bound)
 
     async def set_trading_agents(
         self,
@@ -780,11 +774,10 @@ class AsyncMarket(AsyncAPIResource):
         by: str = "name",
     ) -> Dict[str, Any]:
         params = {"wallet_id_or_name": by}
-        body = {"new_trading_agents": new_trading_agents}
         path = market_organizations_path(
             organization_id, "wallets", wallet_label, "set_trading_agents"
         )
-        return await self._post(path, params=params, json=body)
+        return await self._post(path, params=params, json=new_trading_agents)
 
     async def add_to_balance(
         self,
@@ -794,11 +787,10 @@ class AsyncMarket(AsyncAPIResource):
         by: str = "name",
     ) -> Dict[str, Any]:
         params = {"wallet_id_or_name": by}
-        body = {"amount": amount}
         path = market_organizations_path(
             organization_id, "wallets", wallet_label, "add_to_balance"
         )
-        return await self._post(path, params=params, json=body)
+        return await self._post(path, params=params, json=amount)
 
     async def withdraw_from_balance(
         self,
@@ -808,11 +800,10 @@ class AsyncMarket(AsyncAPIResource):
         by: str = "name",
     ) -> Dict[str, Any]:
         params = {"wallet_id_or_name": by}
-        body = {"amount": amount}
         path = market_organizations_path(
             organization_id, "wallets", wallet_label, "withdraw_from_balance"
         )
-        return await self._post(path, params=params, json=body)
+        return await self._post(path, params=params, json=amount)
 
     async def merge_wallets(
         self,
@@ -861,11 +852,10 @@ class AsyncMarket(AsyncAPIResource):
         by: str = "name",
     ) -> Dict[str, Any]:
         params = {"wallet_id_or_name": by}
-        body = {"wallet_label_to_new_balance": wallet_label_to_new_balance}
         path = market_organizations_path(
             organization_id, "transfer_balance_between_wallets"
         )
-        return await self._post(path, params=params, json=body)
+        return await self._post(path, params=params, json=wallet_label_to_new_balance)
 
     async def transfer_assets_between_wallets(
         self,
@@ -874,7 +864,7 @@ class AsyncMarket(AsyncAPIResource):
         by: str = "name",
     ) -> Dict[str, Any]:
         params = {"wallet_id_or_name": by}
-        body = {"private_asset_to_new_wallet": _serialize_assets(private_asset_to_new_wallet)}
+        body = _serialize_assets(private_asset_to_new_wallet)
         path = market_organizations_path(
             organization_id, "transfer_assets_between_wallets"
         )
@@ -912,14 +902,12 @@ class AsyncMarket(AsyncAPIResource):
         self,
         organization_id: str,
         wallet_label: str,
-        asset_to_number_of_units_and_price_per_unit: Dict[Union[str, Asset], List[int]],
+        asset_to_sale_data: Dict[Union[str, Asset], List[Any]],
         by: str = "name",
     ) -> Dict[str, Any]:
         params = {"wallet_id_or_name": by}
         body = {
-            "asset_to_number_of_units_and_price_per_unit": (
-                _serialize_assets(asset_to_number_of_units_and_price_per_unit)
-            )
+            "asset_to_sale_data": _serialize_assets(asset_to_sale_data)
         }
         path = market_organizations_path(
             organization_id, "wallets", wallet_label, "attempt_to_sell_assets"

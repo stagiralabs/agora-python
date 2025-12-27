@@ -89,6 +89,7 @@ class SatisfiedByAsset(Asset):
             proven_time, author = target_result
             if proven_time <= self.stop_time:
                 return ConstantAsset(Fraction(1))
+            return ConstantAsset(Fraction(0))
 
         if watermark_time > self.stop_time:
             return ConstantAsset(Fraction(0))
@@ -141,9 +142,10 @@ class AgentsSatisfyByAsset(Asset):
         return Fraction(1)
 
 
-class TimeProvenAsset(Asset):
+class TimeRemainingAsset(Asset):
     """
-    The first time the target is proven, or stop_time if not proven by then.
+    The amount of time target is satisfied before stop_time
+    (or 0 if not satisfied by then).
     """
 
     def __init__(self, target: str, stop_time: Fraction):
@@ -163,18 +165,19 @@ class TimeProvenAsset(Asset):
         if target_result is not None:
             proven_time, author = target_result
             if proven_time <= self.stop_time:
-                return ConstantAsset(proven_time)
+                return ConstantAsset(self.stop_time - proven_time)
+            return ConstantAsset(Fraction(0))
 
         if watermark_time > self.stop_time:
-            return ConstantAsset(self.stop_time)
+            return ConstantAsset(Fraction(0))
 
         return self
 
     def lower_bound(self, watermark_time: Fraction) -> Fraction:
-        return watermark_time
+        return Fraction(0)
 
     def upper_bound(self, watermark_time: Fraction) -> Fraction:
-        return self.stop_time
+        return max(self.stop_time - watermark_time, Fraction(0))
 
 
 class MaxAsset(Asset):
@@ -305,56 +308,20 @@ class LinearCombinationAsset(Asset):
         )
 
 
-class PayForQuickProofAsset(Asset):
+class PriceySatisfiedByAsset(Asset):
     """
-    The idea of this asset is that the holder would benefit from
-    seeing the target statement proven as quickly as possible.
-    The holder agrees to pay some reward in exchange for being paid at some
-    constant payout_rate starting at start_time and ending when the target is satisfied
-    (or when some backstop_time is hit). By making
-    payout_rate * (backstop_time - start_time) > reward, the holder can ensure that if
-    other parties don't even attempt to prove the theorem, the holder will make a profit.
-    The exact value of this asset is:
-      payout_rate * max(time_proven(target, backstop_time) - start_time, 0) - reward
-    = max(payout_rate * time_proven(target, backstop_time) - payout_rate * start_time - reward, -reward)
+    1-price if the target is proven on time, -price otherwise.
     """
 
     def __init__(
         self,
         target: str,
-        payout_rate: Fraction,
-        start_time: Fraction,
-        backstop_time: Fraction,
-        reward: Fraction,
+        stop_time: Fraction,
+        price: Fraction,
     ):
-        assert payout_rate >= 0, "payout_rate must be >= 0"
-        assert backstop_time >= start_time, "backstop_time must be at least start_time"
-        assert reward >= 0, "reward must be >= 0"
-
         self.target = target
-        self.payout_rate = payout_rate
-        self.start_time = start_time
-        self.backstop_time = backstop_time
-        self.reward = reward
-
-        self._explicit_form = MaxAsset(
-            [
-                LinearCombinationAsset(
-                    [
-                        (payout_rate, TimeProvenAsset(target, backstop_time)),
-                        (
-                            Fraction(1),
-                            ConstantAsset(-payout_rate * start_time - reward),
-                        ),
-                    ]
-                ),
-                ConstantAsset(-reward),
-            ]
-        )
-
-    @property
-    def explicit_form(self) -> MaxAsset:
-        return self._explicit_form
+        self.stop_time = stop_time
+        self.price = price
 
     def referenced_target_ids(self) -> Set[str]:
         return {self.target}
@@ -364,20 +331,84 @@ class PayForQuickProofAsset(Asset):
     ) -> Asset:
         assert self.referenced_target_ids().issubset(target_success.keys())
 
-        simplified_explicit_form = self.explicit_form.simplify(
-            target_success, watermark_time
-        )
+        target_result = target_success[self.target]
 
-        if isinstance(simplified_explicit_form, ConstantAsset):
-            return simplified_explicit_form
+        if target_result is not None:
+            proven_time, author = target_result
+            if proven_time <= self.stop_time:
+                return ConstantAsset(Fraction(1) - self.price)
+            return ConstantAsset(-self.price)
+
+        if watermark_time > self.stop_time:
+            return ConstantAsset(-self.price)
 
         return self
 
     def lower_bound(self, watermark_time: Fraction) -> Fraction:
-        return self.explicit_form.lower_bound(watermark_time)
+        return -self.price
 
     def upper_bound(self, watermark_time: Fraction) -> Fraction:
-        return self.explicit_form.upper_bound(watermark_time)
+        return Fraction(1) - self.price
+
+
+class PriceyTimeRemainingAsset(Asset):
+    """
+    An asset which is worth -max_loss if the target is proven after stop_time
+    and whose value changes linearly at earlier times such that it's worth
+    0 at break_even_time.
+    Mathematically, the final value is:
+    max_loss*[max(stop_time-proven_time,0)/(stop_time-break_even_time) - 1]
+    """
+
+    def __init__(
+        self,
+        target: str,
+        break_even_time: Fraction,
+        stop_time: Fraction,
+        max_loss: Fraction,
+    ):
+        assert stop_time > break_even_time, "stop_time must be > break_even_time"
+        assert max_loss > 0, "max_loss must be > 0"
+
+        self.target = target
+        self.break_even_time = break_even_time
+        self.stop_time = stop_time
+        self.max_loss = max_loss
+
+    def referenced_target_ids(self) -> Set[str]:
+        return {self.target}
+
+    def simplify(
+        self, target_success: TargetSuccess, watermark_time: Fraction
+    ) -> Asset:
+        assert self.referenced_target_ids().issubset(target_success.keys())
+
+        target_result = target_success[self.target]
+
+        if target_result is not None:
+            proven_time, author = target_result
+            if proven_time <= self.stop_time:
+                time_remaining = max(self.stop_time - proven_time, Fraction(0))
+                value = self.max_loss * (
+                    time_remaining / (self.stop_time - self.break_even_time)
+                    - Fraction(1)
+                )
+                return ConstantAsset(value)
+            return ConstantAsset(-self.max_loss)
+
+        if watermark_time > self.stop_time:
+            return ConstantAsset(-self.max_loss)
+
+        return self
+
+    def lower_bound(self, watermark_time: Fraction) -> Fraction:
+        return -self.max_loss
+
+    def upper_bound(self, watermark_time: Fraction) -> Fraction:
+        time_remaining = max(self.stop_time - watermark_time, Fraction(0))
+        return self.max_loss * (
+            time_remaining / (self.stop_time - self.break_even_time) - Fraction(1)
+        )
 
 
 def asset_to_str(asset: Asset) -> str:
@@ -398,8 +429,8 @@ def asset_to_str(asset: Asset) -> str:
         agent_ids_str = json.dumps(asset.agent_ids)
         return f"AgentsSatisfyByAsset({json.dumps(asset.target)},{agent_ids_str},{fraction_to_str(asset.stop_time)})"
 
-    elif isinstance(asset, TimeProvenAsset):
-        return f"TimeProvenAsset({json.dumps(asset.target)},{fraction_to_str(asset.stop_time)})"
+    elif isinstance(asset, TimeRemainingAsset):
+        return f"TimeRemainingAsset({json.dumps(asset.target)},{fraction_to_str(asset.stop_time)})"
 
     elif isinstance(asset, MaxAsset):
         assets_str = ",".join([asset_to_str(a) for a in asset.assets])
@@ -418,13 +449,19 @@ def asset_to_str(asset: Asset) -> str:
         )
         return f"LinearCombinationAsset([{terms_str}])"
 
-    elif isinstance(asset, PayForQuickProofAsset):
+    elif isinstance(asset, PriceySatisfiedByAsset):
         return (
-            f"PayForQuickProofAsset({json.dumps(asset.target)},"
-            f"{fraction_to_str(asset.payout_rate)},"
-            f"{fraction_to_str(asset.start_time)},"
-            f"{fraction_to_str(asset.backstop_time)},"
-            f"{fraction_to_str(asset.reward)})"
+            f"PriceySatisfiedByAsset({json.dumps(asset.target)},"
+            f"{fraction_to_str(asset.stop_time)},"
+            f"{fraction_to_str(asset.price)})"
+        )
+
+    elif isinstance(asset, PriceyTimeRemainingAsset):
+        return (
+            f"PriceyTimeRemainingAsset({json.dumps(asset.target)},"
+            f"{fraction_to_str(asset.break_even_time)},"
+            f"{fraction_to_str(asset.stop_time)},"
+            f"{fraction_to_str(asset.max_loss)})"
         )
 
     else:
@@ -538,12 +575,12 @@ def str_to_asset(string: str) -> Asset:
         stop_time = parse_fraction(args[2])
         return AgentsSatisfyByAsset(target, agent_ids, stop_time)
 
-    elif string.startswith("TimeProvenAsset("):
+    elif string.startswith("TimeRemainingAsset("):
         end = find_matching_paren(string, string.index("("))
-        args = parse_arguments(string[16:end])
+        args = parse_arguments(string[19:end])
         target = json.loads(args[0])
         stop_time = parse_fraction(args[1])
-        return TimeProvenAsset(target, stop_time)
+        return TimeRemainingAsset(target, stop_time)
 
     elif string.startswith("MaxAsset("):
         end = find_matching_paren(string, string.index("("))
@@ -593,16 +630,23 @@ def str_to_asset(string: str) -> Asset:
 
         return LinearCombinationAsset(terms)
 
-    elif string.startswith("PayForQuickProofAsset("):
+    elif string.startswith("PriceySatisfiedByAsset("):
         end = find_matching_paren(string, string.index("("))
-        args = parse_arguments(string[22:end])
+        args = parse_arguments(string[23:end])
         target = json.loads(args[0])
-        payout_rate = parse_fraction(args[1])
-        start_time = parse_fraction(args[2])
-        backstop_time = parse_fraction(args[3])
-        reward = parse_fraction(args[4])
-        return PayForQuickProofAsset(
-            target, payout_rate, start_time, backstop_time, reward
+        stop_time = parse_fraction(args[1])
+        price = parse_fraction(args[2])
+        return PriceySatisfiedByAsset(target, stop_time, price)
+
+    elif string.startswith("PriceyTimeRemainingAsset("):
+        end = find_matching_paren(string, string.index("("))
+        args = parse_arguments(string[25:end])
+        target = json.loads(args[0])
+        break_even_time = parse_fraction(args[1])
+        stop_time = parse_fraction(args[2])
+        max_loss = parse_fraction(args[3])
+        return PriceyTimeRemainingAsset(
+            target, break_even_time, stop_time, max_loss
         )
 
     else:
