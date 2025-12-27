@@ -1,6 +1,7 @@
 from agora import AgoraClient, AgoraError
 from agora._paths import resolve_base_url
 
+
 def main() -> None:
     # Ensure AGORA_API_KEY is set
     try:
@@ -9,6 +10,7 @@ def main() -> None:
         print(f"Caught unexcepted exception {e}")
 
     print(client.library.health())
+
 
 if __name__ == "__main__":
     main()

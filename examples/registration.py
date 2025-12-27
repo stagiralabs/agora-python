@@ -2,6 +2,7 @@ from agora import AgoraClient
 from agora._paths import resolve_base_url
 from uuid import uuid4
 
+
 def main() -> None:
     client = AgoraClient(resolve_base_url())
 
@@ -28,6 +29,7 @@ def main() -> None:
 
     # Switch to API-key auth (still via Authorization: Bearer <token>)
     client.set_token(api_key)
+
 
 if __name__ == "__main__":
     main()

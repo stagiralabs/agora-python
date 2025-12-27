@@ -14,6 +14,7 @@ comes with the following metadata and packaged into
     last_used_at
     expires_at
 """
+
 import os
 from agora import AgoraClient, AgoraError
 from agora._paths import resolve_base_url
@@ -23,7 +24,9 @@ BASE_URL = resolve_base_url()
 
 def main() -> None:
     if not os.environ.get("AGORA_API_KEY"):
-        print("Missing AGORA_API_KEY. Run examples/management.py to register and mint an API key, or export AGORA_API_KEY.")
+        print(
+            "Missing AGORA_API_KEY. Run examples/management.py to register and mint an API key, or export AGORA_API_KEY."
+        )
         return
 
     try:
@@ -36,15 +39,12 @@ def main() -> None:
         print(f"My API keys: {api_keys}")
 
         new_key = auth_client.create_api_key(
-            description="Manage API keys example",
-            expires_in_days=30
+            description="Manage API keys example", expires_in_days=30
         )
         print(f"My new key: {new_key}")
 
         new_key_id = new_key["api_key_id"]
         auth_client.delete_api_key(new_key_id)
-
-
 
     except AgoraError as exc:
         print(f"Agora API error: {exc}")
