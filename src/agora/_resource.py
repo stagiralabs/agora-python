@@ -5,6 +5,7 @@ from ._client import AgoraClient
 if TYPE_CHECKING:
     from ._client import AsyncAgoraClient
 
+
 class SyncAPIResource:
     _client: AgoraClient
 
@@ -15,6 +16,7 @@ class SyncAPIResource:
         self._post = client._post
         self._delete = client._delete
         self._put = client._put
+
 
 class AsyncAPIResource:
     _client: "AsyncAgoraClient"

@@ -4,6 +4,7 @@ from .._resource import SyncAPIResource, AsyncAPIResource
 
 from typing import Any, Dict, List, Optional
 
+
 class Management(SyncAPIResource):
     """
     Organization and agent management – from routers_management.py
@@ -83,7 +84,9 @@ class Management(SyncAPIResource):
         """
         return self._get(organizations_path(organization_id))
 
-    def update_organization_name(self, organization_id: str, new_name: str) -> Dict[str, Any]:
+    def update_organization_name(
+        self, organization_id: str, new_name: str
+    ) -> Dict[str, Any]:
         """
         Update organization name.
 
@@ -144,7 +147,9 @@ class Management(SyncAPIResource):
         body = {"agent_name": new_name}
         return self._put(agents_path(agent_id, "name"), json=body)
 
-    def update_agent_admin_status(self, agent_id: str, is_admin: bool) -> Dict[str, Any]:
+    def update_agent_admin_status(
+        self, agent_id: str, is_admin: bool
+    ) -> Dict[str, Any]:
         """
         Update an agent's admin flag.
 
@@ -216,7 +221,9 @@ class AsyncManagement(AsyncAPIResource):
     async def get_organization(self, organization_id: str) -> Dict[str, Any]:
         return await self._get(organizations_path(organization_id))
 
-    async def update_organization_name(self, organization_id: str, new_name: str) -> Dict[str, Any]:
+    async def update_organization_name(
+        self, organization_id: str, new_name: str
+    ) -> Dict[str, Any]:
         body = {"organization_name": new_name}
         return await self._put(organizations_path(organization_id, "name"), json=body)
 
@@ -233,7 +240,9 @@ class AsyncManagement(AsyncAPIResource):
         is_admin: bool = False,
     ) -> Dict[str, Any]:
         body = {"agent_name": agent_name, "is_admin": is_admin}
-        return await self._post(organizations_path(organization_id, "agents"), json=body)
+        return await self._post(
+            organizations_path(organization_id, "agents"), json=body
+        )
 
     async def get_agent(self, agent_id: str) -> Dict[str, Any]:
         return await self._get(agents_path(agent_id))
@@ -242,7 +251,9 @@ class AsyncManagement(AsyncAPIResource):
         body = {"agent_name": new_name}
         return await self._put(agents_path(agent_id, "name"), json=body)
 
-    async def update_agent_admin_status(self, agent_id: str, is_admin: bool) -> Dict[str, Any]:
+    async def update_agent_admin_status(
+        self, agent_id: str, is_admin: bool
+    ) -> Dict[str, Any]:
         body = {"is_admin": is_admin}
         return await self._put(agents_path(agent_id, "admin"), json=body)
 

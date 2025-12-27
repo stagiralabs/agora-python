@@ -10,10 +10,11 @@ from ._exceptions import AgoraError, exception_from_response
 
 from functools import cached_property
 
-_API_KEY_ID = 'api_key_id'
-_API_KEY_DESC = 'description'
-_API_KEY_EXPIRES_AT = 'expires_at'
-_API_KEY_ACTIVE = 'is_active'
+_API_KEY_ID = "api_key_id"
+_API_KEY_DESC = "description"
+_API_KEY_EXPIRES_AT = "expires_at"
+_API_KEY_ACTIVE = "is_active"
+
 
 class AuthAPI:
     """
@@ -26,7 +27,7 @@ class AuthAPI:
         GET    /api/auth/me
     """
 
-    def __init__(self, client: 'AgoraClient'):
+    def __init__(self, client: "AgoraClient"):
         self._client = client
 
     # ---- current user ----
@@ -77,8 +78,8 @@ class AuthAPI:
         DELETE /api/auth/api-keys/{api_key_id}
         """
         self._check_api_key_in_list_or_error(
-            api_key_id, 
-            f"API Key with ID {api_key_id} was not found. Cannot delete key."
+            api_key_id,
+            f"API Key with ID {api_key_id} was not found. Cannot delete key.",
         )
 
         self._client._delete(f"/api/auth/api-keys/{api_key_id}")
@@ -101,8 +102,8 @@ class AuthAPI:
         """
         api_keys = self.list_api_keys()
         self._check_api_key_in_list_or_error(
-            api_key_id, 
-            f"API Key with ID: {api_key_id} was not found. Unable to query information about this key."
+            api_key_id,
+            f"API Key with ID: {api_key_id} was not found. Unable to query information about this key.",
         )
 
         for key_metadata in api_keys:
@@ -111,10 +112,14 @@ class AuthAPI:
 
         return is_active
 
-    def _check_api_key_in_list_or_error(self, api_key_id: str, error_desc: Optional[str] = None) -> None:
+    def _check_api_key_in_list_or_error(
+        self, api_key_id: str, error_desc: Optional[str] = None
+    ) -> None:
         api_keys = self.list_api_keys()
 
-        if not any(api_key_id == api_key_metadata[_API_KEY_ID] for api_key_metadata in api_keys):
+        if not any(
+            api_key_id == api_key_metadata[_API_KEY_ID] for api_key_metadata in api_keys
+        ):
             if error_desc:
                 raise AgoraError(error_desc)
             else:
@@ -185,7 +190,9 @@ class AsyncAuthAPI:
     ) -> None:
         api_keys = await self.list_api_keys()
 
-        if not any(api_key_id == api_key_metadata[_API_KEY_ID] for api_key_metadata in api_keys):
+        if not any(
+            api_key_id == api_key_metadata[_API_KEY_ID] for api_key_metadata in api_keys
+        ):
             if error_desc:
                 raise AgoraError(error_desc)
             else:
@@ -211,10 +218,7 @@ class AgoraClient(SyncClient):
     """
 
     def __init__(
-        self, 
-        base_url: str, 
-        token: Optional[str] = None, 
-        timeout: float = 10.0
+        self, base_url: str, token: Optional[str] = None, timeout: float = 10.0
     ) -> None:
         if not base_url:
             raise ValueError("base_url must be non-empty")
@@ -305,7 +309,9 @@ class AgoraClient(SyncClient):
             payload = resp.text
 
         if not resp.ok:
-            message = payload.get("detail") if isinstance(payload, dict) else str(payload)
+            message = (
+                payload.get("detail") if isinstance(payload, dict) else str(payload)
+            )
             if message is None:
                 message = ""
             else:
@@ -318,15 +324,27 @@ class AgoraClient(SyncClient):
     def _get(self, path: str, *, params: ParamsType = None) -> Any:
         return self._request("GET", path, params=params)
 
-    def _post(self, path: str, *, json: Optional[Dict[str, Any]] = None, params: ParamsType = None) -> Any:
+    def _post(
+        self,
+        path: str,
+        *,
+        json: Optional[Dict[str, Any]] = None,
+        params: ParamsType = None,
+    ) -> Any:
         return self._request("POST", path, params=params, json=json)
 
     def _delete(self, path: str, *, params: ParamsType = None) -> Any:
         return self._request("DELETE", path, params=params)
 
-    def _put(self, path: str, *, json: Optional[Dict[str, Any]] = None, params: ParamsType = None) -> Any:
+    def _put(
+        self,
+        path: str,
+        *,
+        json: Optional[Dict[str, Any]] = None,
+        params: ParamsType = None,
+    ) -> Any:
         return self._request("PUT", path, params=params, json=json)
-    
+
     # ------------- resource endpoints -------------
 
     @cached_property
@@ -334,19 +352,19 @@ class AgoraClient(SyncClient):
         from .resources.management import Management
 
         return Management(self)
-    
+
     @cached_property
     def library(self):
         from .resources.library import Library
 
         return Library(self)
-    
+
     @cached_property
     def market(self):
         from .resources.market import Market
 
         return Market(self)
-    
+
 
 class AsyncAgoraClient(AsyncClient):
     """
@@ -432,7 +450,9 @@ class AsyncAgoraClient(AsyncClient):
             payload = resp.text
 
         if resp.is_error:
-            message = payload.get("detail") if isinstance(payload, dict) else str(payload)
+            message = (
+                payload.get("detail") if isinstance(payload, dict) else str(payload)
+            )
             if message is None:
                 message = ""
             else:

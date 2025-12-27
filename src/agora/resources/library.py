@@ -4,6 +4,7 @@ from .._resource import SyncAPIResource, AsyncAPIResource
 
 from typing import Any, Dict, List, Optional
 
+
 class Library(SyncAPIResource):
     """
     Library mechanics proxy – from routers_library.py

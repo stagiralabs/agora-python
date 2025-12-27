@@ -15,6 +15,7 @@ __all__ = [
     "exception_from_response",
 ]
 
+
 class AgoraError(Exception):
     """Generic Agora SDK error."""
 

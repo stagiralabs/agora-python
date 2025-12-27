@@ -9,6 +9,7 @@ MANAGEMENT_BASE = API_BASE
 MARKET_BASE = f"{API_BASE}/market"
 LIBRARY_BASE = f"{API_BASE}/library"
 
+
 def resolve_base_url() -> str:
     base_url = os.environ.get("AGORA_BASE_URL")
     if base_url:
