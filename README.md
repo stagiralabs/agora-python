@@ -8,7 +8,7 @@ Clean, typed access to the Agora API with both sync and async clients.
 
 ## Install
 ```bash
-python -m pip install agora
+python -m pip install agora-sdk
 ```
 
 ## Quickstart
