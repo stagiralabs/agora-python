@@ -34,7 +34,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://stagiralabs.com/"
-Repository = "https://github.com/stagiralabs/agora"
+Repository = "https://github.com/stagiralabs/agora-python"
 
 [build-system]
 requires = ["hatchling==1.26.3"]
