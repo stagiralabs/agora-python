@@ -30,7 +30,7 @@ jobs:
       - run: python -m pip install build
       - run: python -m build
       - name: Publish to TestPyPI
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_to == 'testpypi' && github.ref == 'refs/heads/release/test' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_to == 'testpypi' && startsWith(github.ref, 'refs/heads/release/test') }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
