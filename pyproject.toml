@@ -1,7 +1,8 @@
 [project]
 name = "agora"
-version = "0.0.1"
-description = "SDK for Agora"
+version = "1.0.0-alpha.1"
+description = "Python SDK for Agora"
+license = { file = "LICENSE" }
 requires-python = ">= 3.9"
 dependencies = [
     "requests>=2.31.0",
