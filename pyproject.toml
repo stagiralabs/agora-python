@@ -1,5 +1,5 @@
 [project]
-name = "agora"
+name = "agora-sdk"
 version = "1.0.0-alpha.1"
 description = "Python SDK for Agora"
 license = { file = "LICENSE" }
