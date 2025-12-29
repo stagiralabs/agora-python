@@ -21,6 +21,8 @@ class AuthAPI:
     Authentication endpoints – from routers_auth.py
 
     Routes wrapped here:
+        POST   /api/auth/accept-invitation
+        POST   /api/auth/link-supabase
         POST   /api/auth/api-keys
         GET    /api/auth/api-keys
         DELETE /api/auth/api-keys/{api_key_id}
@@ -83,6 +85,32 @@ class AuthAPI:
         )
 
         self._client._delete(f"/api/auth/api-keys/{api_key_id}")
+
+    # ---- invitations ----
+
+    def accept_invitation(self, invite_token: str) -> Dict[str, Any]:
+        """
+        Accept an invite token to claim an agent identity.
+
+        POST /api/auth/accept-invitation
+        Body: AcceptInvitationRequest { invite_token }
+        Returns: AcceptInvitationResponse
+        """
+        body = {"invite_token": invite_token}
+        return self._client._post("/api/auth/accept-invitation", json=body)
+
+    # ---- supabase linking ----
+
+    def link_supabase_account(self, api_key: str) -> Dict[str, Any]:
+        """
+        Link the current Supabase JWT (Authorization header) to an API-keyed agent.
+
+        POST /api/auth/link-supabase
+        Body: LinkSupabaseRequest { api_key }
+        Returns: AgentResponse
+        """
+        body = {"api_key": api_key}
+        return self._client._post("/api/auth/link-supabase", json=body)
 
     def get_api_key_metadata(self, api_key_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -156,6 +184,14 @@ class AsyncAuthAPI:
             f"API Key with ID {api_key_id} was not found. Cannot delete key.",
         )
         await self._client._delete(f"/api/auth/api-keys/{api_key_id}")
+
+    async def accept_invitation(self, invite_token: str) -> Dict[str, Any]:
+        body = {"invite_token": invite_token}
+        return await self._client._post("/api/auth/accept-invitation", json=body)
+
+    async def link_supabase_account(self, api_key: str) -> Dict[str, Any]:
+        body = {"api_key": api_key}
+        return await self._client._post("/api/auth/link-supabase", json=body)
 
     async def get_api_key_metadata(self, api_key_id: str) -> Optional[Dict[str, Any]]:
         """
