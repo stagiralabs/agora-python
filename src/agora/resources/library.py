@@ -1,8 +1,40 @@
+import warnings
+
 from .._client import AgoraClient
 from .._paths import library_path
 from .._resource import SyncAPIResource, AsyncAPIResource
 
 from typing import Any, Dict, List, Optional
+
+
+def _library_params(
+    *,
+    project_id: Optional[str],
+    repo_url: Optional[str],
+    repo_rev: Optional[str],
+) -> Dict[str, Any]:
+    params: Dict[str, Any] = {}
+    if project_id:
+        params["project_id"] = project_id
+        if repo_url or repo_rev:
+            warnings.warn(
+                "repo_url/repo_rev are deprecated; use project_id instead.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
+        return params
+    if repo_url or repo_rev:
+        warnings.warn(
+            "repo_url/repo_rev are deprecated; use project_id instead.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+        if repo_url:
+            params["repo_url"] = repo_url
+        if repo_rev:
+            params["repo_rev"] = repo_rev
+        return params
+    raise ValueError("project_id is required for this endpoint.")
 
 
 class Library(SyncAPIResource):
@@ -47,55 +79,53 @@ class Library(SyncAPIResource):
         self,
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
+        project_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get all files in the library.
 
         GET /api/library/library
-        Query: repo_url?, repo_rev?
+        Query: project_id (preferred), repo_url?, repo_rev?
         """
-        params: Dict[str, Any] = {}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
-        return self._get(library_path("library"), params=params or None)
+        params = _library_params(
+            project_id=project_id, repo_url=repo_url, repo_rev=repo_rev
+        )
+        return self._get(library_path("library"), params=params)
 
     def list_repo_files(
         self,
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
+        project_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get all files in the repository (not just Library/).
 
         GET /api/library/repo_files
-        Query: repo_url?, repo_rev?
+        Query: project_id (preferred), repo_url?, repo_rev?
         """
-        params: Dict[str, Any] = {}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
-        return self._get(library_path("repo_files"), params=params or None)
+        params = _library_params(
+            project_id=project_id, repo_url=repo_url, repo_rev=repo_rev
+        )
+        return self._get(library_path("repo_files"), params=params)
 
     def get_file(
         self,
         file_name: str,
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
+        project_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Get a specific file in the library.
 
         GET /api/library/library_file
-        Query: file_name, repo_url?, repo_rev?
+        Query: file_name, project_id (preferred), repo_url?, repo_rev?
         """
-        params: Dict[str, Any] = {"file_name": file_name}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
+        params = {"file_name": file_name}
+        params.update(
+            _library_params(project_id=project_id, repo_url=repo_url, repo_rev=repo_rev)
+        )
         return self._get(library_path("library_file"), params=params)
 
     def search(
@@ -105,18 +135,18 @@ class Library(SyncAPIResource):
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
         search_mode: str = "syntactic",
+        project_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Search the library for code declarations.
 
         GET /api/library/search
-        Query: query, k, repo_url, repo_rev, search_mode
+        Query: query, k, search_mode, project_id (preferred), repo_url?, repo_rev?
         """
         params: Dict[str, Any] = {"query": query, "k": k, "search_mode": search_mode}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
+        params.update(
+            _library_params(project_id=project_id, repo_url=repo_url, repo_rev=repo_rev)
+        )
         return self._get(library_path("search"), params=params)
 
     def search_all_repos(
@@ -167,6 +197,7 @@ class Library(SyncAPIResource):
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
         ephemeral: Optional[bool] = False,
+        project_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Add a contribution to the library.
@@ -175,6 +206,7 @@ class Library(SyncAPIResource):
         Body: AddContributionRequest {
             name: str,
             file_content: str,
+            project_id?: str,
             repo_url?: str,
             repo_rev?: str,
             ephemeral?: bool,
@@ -184,10 +216,9 @@ class Library(SyncAPIResource):
             "name": name,
             "file_content": file_content,
         }
-        if repo_url:
-            body["repo_url"] = repo_url
-        if repo_rev:
-            body["repo_rev"] = repo_rev
+        body.update(
+            _library_params(project_id=project_id, repo_url=repo_url, repo_rev=repo_rev)
+        )
         if ephemeral is not None:
             body["ephemeral"] = ephemeral
 
@@ -224,37 +255,35 @@ class AsyncLibrary(AsyncAPIResource):
         self,
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
+        project_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        params: Dict[str, Any] = {}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
-        return await self._get(library_path("library"), params=params or None)
+        params = _library_params(
+            project_id=project_id, repo_url=repo_url, repo_rev=repo_rev
+        )
+        return await self._get(library_path("library"), params=params)
 
     async def list_repo_files(
         self,
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
+        project_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        params: Dict[str, Any] = {}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
-        return await self._get(library_path("repo_files"), params=params or None)
+        params = _library_params(
+            project_id=project_id, repo_url=repo_url, repo_rev=repo_rev
+        )
+        return await self._get(library_path("repo_files"), params=params)
 
     async def get_file(
         self,
         file_name: str,
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
+        project_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         params: Dict[str, Any] = {"file_name": file_name}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
+        params.update(
+            _library_params(project_id=project_id, repo_url=repo_url, repo_rev=repo_rev)
+        )
         return await self._get(library_path("library_file"), params=params)
 
     async def search(
@@ -264,12 +293,12 @@ class AsyncLibrary(AsyncAPIResource):
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
         search_mode: str = "syntactic",
+        project_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         params: Dict[str, Any] = {"query": query, "k": k, "search_mode": search_mode}
-        if repo_url:
-            params["repo_url"] = repo_url
-        if repo_rev:
-            params["repo_rev"] = repo_rev
+        params.update(
+            _library_params(project_id=project_id, repo_url=repo_url, repo_rev=repo_rev)
+        )
         return await self._get(library_path("search"), params=params)
 
     async def search_all_repos(
@@ -302,15 +331,15 @@ class AsyncLibrary(AsyncAPIResource):
         repo_url: Optional[str] = None,
         repo_rev: Optional[str] = None,
         ephemeral: Optional[bool] = False,
+        project_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         body: Dict[str, Any] = {
             "name": name,
             "file_content": file_content,
         }
-        if repo_url:
-            body["repo_url"] = repo_url
-        if repo_rev:
-            body["repo_rev"] = repo_rev
+        body.update(
+            _library_params(project_id=project_id, repo_url=repo_url, repo_rev=repo_rev)
+        )
         if ephemeral is not None:
             body["ephemeral"] = ephemeral
 
